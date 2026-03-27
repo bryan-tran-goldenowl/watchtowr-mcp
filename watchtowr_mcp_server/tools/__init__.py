@@ -5,6 +5,9 @@ from .threat_intel import register_threat_intel_tools
 from .services import register_service_tools
 from .organization import register_organization_tools
 from .composite import register_composite_tools
+from .reporting import register_reporting_tools
+from .incident import register_incident_tools
+from .workflow import register_workflow_tools
 
 
 def register_all_tools(mcp):
@@ -15,3 +18,6 @@ def register_all_tools(mcp):
     register_service_tools(mcp)
     register_organization_tools(mcp)
     register_composite_tools(mcp)
+    register_reporting_tools(mcp)
+    register_incident_tools(mcp)
+    register_workflow_tools(mcp)
