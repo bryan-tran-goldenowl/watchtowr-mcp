@@ -8,9 +8,9 @@
 
 <p>Key highlights:</p>
 <ul>
-  <li><strong>60 tools</strong> covering the full watchTowr Platform API</li>
+  <li><strong>88 tools</strong> covering the full watchTowr Platform API</li>
   <li><strong>Read and write</strong> — query your attack surface and take action (update statuses, trigger retests, submit seed assets)</li>
-  <li><strong>Composite intelligence</strong> — built-in tools for attack surface summaries, change detection, and security posture reviews</li>
+  <li><strong>Composite intelligence</strong> — built-in tools for attack surface summaries, change detection, executive scorecards, and compliance reporting</li>
   <li><strong>Secure</strong> — authenticates via your API key with tenant isolation; credentials never leave your environment</li>
 </ul>
 
@@ -47,6 +47,12 @@
   <li>"What hunts have been completed recently?"</li>
   <li>"What's the security posture for business unit 3?"</li>
   <li>"Generate a remediation list for hunt 42"</li>
+  <li>"Give me the executive risk scorecard"</li>
+  <li>"Show me stale findings older than 30 days"</li>
+  <li>"What critical findings are unassigned?"</li>
+  <li>"Run a daily digest"</li>
+  <li>"Show me all assets in country CN"</li>
+  <li>"What services are running Apache?"</li>
 </ul>
 
 <hr>
@@ -135,7 +141,7 @@ uv run watchtowr-mcp</code></pre>
 
 <h2>What Tools Are Available?</h2>
 
-<p>The MCP server provides <strong>60 tools</strong> organised into seven categories. Your AI assistant can call any of these on your behalf.</p>
+<p>The MCP server provides <strong>88 tools</strong> organised into ten categories. Your AI assistant can call any of these on your behalf.</p>
 
 <h3>Findings (10 tools)</h3>
 <table>
@@ -220,7 +226,7 @@ uv run watchtowr-mcp</code></pre>
   <tr><td><code>get_business_unit_details</code></td><td>Full detail for a specific business unit</td></tr>
 </table>
 
-<h3>Composite Intelligence (7 tools)</h3>
+<h3>Composite &amp; Triage (13 tools)</h3>
 <table>
   <tr><th>Tool</th><th>Description</th></tr>
   <tr><td><code>get_attack_surface_summary</code></td><td>Asset counts by type and finding counts by severity</td></tr>
@@ -230,6 +236,49 @@ uv run watchtowr-mcp</code></pre>
   <tr><td><code>get_finding_with_asset_context</code></td><td>Finding details enriched with the related asset's full details</td></tr>
   <tr><td><code>get_expiring_certificates_with_services</code></td><td>Expiring certs cross-referenced with exposed services</td></tr>
   <tr><td><code>get_hunt_remediation_list</code></td><td>Hunt findings expanded with details for remediation handoff</td></tr>
+  <tr><td><code>get_critical_exposure_report</code></td><td>Executive headlines: critical/high counts, CISA-KEV, expiring certs, top findings</td></tr>
+  <tr><td><code>get_findings_by_asset</code></td><td>Search findings associated with a specific asset</td></tr>
+  <tr><td><code>get_stale_findings</code></td><td>Findings open longer than N days</td></tr>
+  <tr><td><code>get_unassigned_critical_findings</code></td><td>Critical/high findings with no assignee</td></tr>
+  <tr><td><code>get_asset_findings_count_by_type</code></td><td>Unresolved findings heatmap by asset type</td></tr>
+  <tr><td><code>get_shadow_it_candidates</code></td><td>New assets not assigned to any business unit</td></tr>
+</table>
+
+<h3>Reporting &amp; Compliance (11 tools)</h3>
+<table>
+  <tr><th>Tool</th><th>Description</th></tr>
+  <tr><td><code>get_asset_inventory_by_business_unit</code></td><td>Full asset inventory for a business unit</td></tr>
+  <tr><td><code>get_out_of_scope_assets</code></td><td>All assets marked as out of scope or excluded</td></tr>
+  <tr><td><code>get_verified_vs_unverified_assets</code></td><td>Asset verification status breakdown across all types</td></tr>
+  <tr><td><code>get_finding_age_distribution</code></td><td>Findings bucketed by age (0-7d, 7-30d, 30-90d, 90d+) and severity</td></tr>
+  <tr><td><code>get_finding_status_timeline</code></td><td>Opened vs remediated findings per week</td></tr>
+  <tr><td><code>get_open_ports_summary</code></td><td>Most common open ports with service counts</td></tr>
+  <tr><td><code>get_assets_without_findings</code></td><td>Asset types with assets but zero findings — coverage gaps</td></tr>
+  <tr><td><code>get_certificate_health_report</code></td><td>Certificates grouped by health: expired, expiring, valid</td></tr>
+  <tr><td><code>get_executive_risk_scorecard</code></td><td>Single-call executive dashboard: assets, findings, KEV, cert health</td></tr>
+  <tr><td><code>get_week_over_week_delta</code></td><td>Weekly trend report: new assets and findings per week</td></tr>
+  <tr><td><code>get_top_findings_by_occurrence</code></td><td>Most frequently recurring finding titles — systemic issues</td></tr>
+</table>
+
+<h3>Incident Response (5 tools)</h3>
+<table>
+  <tr><th>Tool</th><th>Description</th></tr>
+  <tr><td><code>search_assets_by_country</code></td><td>Find all IPs and services in a specific country</td></tr>
+  <tr><td><code>get_internet_facing_services_summary</code></td><td>Exposed services grouped by type with counts</td></tr>
+  <tr><td><code>get_assets_by_technology</code></td><td>Find all services running a specific technology</td></tr>
+  <tr><td><code>get_cisa_kev_remediation_status</code></td><td>CISA-KEV findings grouped by remediation status</td></tr>
+  <tr><td><code>find_related_assets</code></td><td>Blast radius mapping: subdomains, ports, services for an asset</td></tr>
+</table>
+
+<h3>Workflow &amp; Automation (6 tools)</h3>
+<table>
+  <tr><th>Tool</th><th>Description</th></tr>
+  <tr><td><code>get_recent_remediations</code></td><td>Findings remediated within the last N days</td></tr>
+  <tr><td><code>get_daily_digest</code></td><td>24-hour digest: new assets, new findings, activity log</td></tr>
+  <tr><td><code>bulk_retest_findings</code></td><td>Trigger retests for multiple findings at once</td></tr>
+  <tr><td><code>bulk_update_finding_status</code></td><td>Update the status of multiple findings at once</td></tr>
+  <tr><td><code>get_actionable_findings_queue</code></td><td>Prioritized queue of open findings by severity and age</td></tr>
+  <tr><td><code>get_findings_needing_assignment</code></td><td>Unassigned open findings grouped by severity — triage inbox</td></tr>
 </table>
 
 <hr>

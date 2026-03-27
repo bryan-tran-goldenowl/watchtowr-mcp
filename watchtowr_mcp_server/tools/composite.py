@@ -510,6 +510,257 @@ def register_composite_tools(mcp):
             return f"Error generating hunt remediation list: {e}"
 
 
+    # ── Triage & Prioritization ─────────────────────────────────
+
+    @mcp.tool()
+    def get_critical_exposure_report() -> str:
+        """Executive-level exposure summary: critical/high finding counts, CISA-KEV count, expiring certificates, and top recurring finding titles."""
+        try:
+            client = get_api_client()
+            findings_api = FindingsApi(client)
+            cert_api = CertificatesApi(client)
+            lines = ["Critical Exposure Report", ""]
+
+            severity_counts = {}
+            for severity in ["Critical", "High", "Medium", "Low"]:
+                try:
+                    severity_counts[severity] = _count(findings_api, "get_list_findings", severities=severity)
+                except Exception:
+                    severity_counts[severity] = "error"
+            lines.append("Findings by Severity:")
+            for sev, count in severity_counts.items():
+                lines.append(f"  • {sev}: {count}")
+            lines.append("")
+
+            try:
+                kev_count = _count(findings_api, "get_list_findings", tags="CISA-KEV")
+                lines.append(f"CISA-KEV Findings: {kev_count}")
+            except Exception:
+                lines.append("CISA-KEV Findings: error")
+
+            try:
+                expiry_cutoff = datetime.now() + timedelta(days=30)
+                exp_count = _count(cert_api, "get_list_certificates", not_after_from=datetime.now(), not_after_to=expiry_cutoff)
+                lines.append(f"Certificates Expiring (30 days): {exp_count}")
+            except Exception:
+                lines.append("Certificates Expiring (30 days): error")
+            lines.append("")
+
+            try:
+                resp = findings_api.get_list_findings(severities="Critical,High", page_size=30)
+                if hasattr(resp, 'data') and resp.data:
+                    title_counts = {}
+                    for f in resp.data:
+                        t = getattr(f, 'title', 'Unknown')
+                        title_counts[t] = title_counts.get(t, 0) + 1
+                    top = sorted(title_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+                    lines.append("Top Recurring Critical/High Findings:")
+                    for title, count in top:
+                        lines.append(f"  • ({count}x) {title}")
+            except Exception:
+                lines.append("Top Recurring Findings: error")
+
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Error generating critical exposure report: {e}"
+
+    @mcp.tool()
+    def get_findings_by_asset(asset_type: str, asset_id: int) -> str:
+        """Search findings associated with a specific asset by looking up the asset name first.
+
+        Args:
+            asset_type: Asset type (e.g. domain, ip, subdomain, port).
+            asset_id: The asset ID.
+        """
+        try:
+            client = get_api_client()
+
+            detail_lines = _fetch_asset_detail(client, asset_type, asset_id)
+            asset_name = None
+            for line in detail_lines:
+                if "Name:" in line or "Iprange:" in line:
+                    asset_name = line.split(":", 1)[1].strip()
+                    break
+
+            if not asset_name:
+                return f"Could not resolve name for {asset_type} {asset_id}."
+
+            findings_api = FindingsApi(client)
+            resp = findings_api.get_list_findings(asset_title=asset_name, page_size=30)
+
+            if not hasattr(resp, 'data') or not resp.data:
+                return f"No findings found for {asset_type} '{asset_name}' (ID: {asset_id})."
+
+            total = get_total(resp)
+            lines = [f"Findings for {asset_type} '{asset_name}' (ID: {asset_id}):", ""]
+            for f in resp.data:
+                fid = getattr(f, 'id', '')
+                sev = getattr(f, 'severity', 'Unknown')
+                title = getattr(f, 'title', 'No title')
+                status = getattr(f, 'status', 'Unknown')
+                lines.append(f"• [ID:{fid}] [{sev}] {title} ({status})")
+
+            if total and total > len(resp.data):
+                lines.append(f"\nShowing {len(resp.data)} of {total}.")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Error retrieving findings by asset: {e}"
+
+    @mcp.tool()
+    def get_stale_findings(days: int = 30, page_size: int = 30) -> str:
+        """List findings that have been open/unresolved for more than N days.
+
+        Args:
+            days: Minimum age in days for a finding to be considered stale (default 30).
+            page_size: Results per page (max 30).
+        """
+        try:
+            client = get_api_client()
+            findings_api = FindingsApi(client)
+            cutoff = datetime.now() - timedelta(days=days)
+
+            resp = findings_api.get_list_findings(
+                statuses="Open,Triaged,In Progress",
+                created_to=cutoff,
+                page_size=min(page_size, 30),
+            )
+
+            if not hasattr(resp, 'data') or not resp.data:
+                return f"No findings older than {days} days."
+
+            total = get_total(resp)
+            lines = [f"Stale Findings (Open > {days} Days):", ""]
+            for f in resp.data:
+                fid = getattr(f, 'id', '')
+                sev = getattr(f, 'severity', 'Unknown')
+                title = getattr(f, 'title', 'No title')
+                status = getattr(f, 'status', 'Unknown')
+                created = getattr(f, 'created_at', '')
+                lines.append(f"• [ID:{fid}] [{sev}] {title} ({status}) - Created: {created}")
+
+            if total:
+                lines.insert(1, f"Total: {total}")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Error retrieving stale findings: {e}"
+
+    @mcp.tool()
+    def get_unassigned_critical_findings(page_size: int = 30) -> str:
+        """List critical and high severity findings that have no assignee.
+
+        Args:
+            page_size: Results per page (max 30).
+        """
+        try:
+            client = get_api_client()
+            findings_api = FindingsApi(client)
+
+            lines = ["Unassigned Critical/High Findings:", ""]
+            total_unassigned = 0
+
+            for severity in ["Critical", "High"]:
+                resp = findings_api.get_list_findings(
+                    severities=severity,
+                    statuses="Open,Triaged,In Progress",
+                    assignee="No Assignee",
+                    page_size=min(page_size, 30),
+                )
+                count = get_total(resp) or (len(resp.data) if hasattr(resp, 'data') and resp.data else 0)
+                total_unassigned += count
+
+                if hasattr(resp, 'data') and resp.data:
+                    lines.append(f"{severity} ({count}):")
+                    for f in resp.data:
+                        fid = getattr(f, 'id', '')
+                        title = getattr(f, 'title', 'No title')
+                        status = getattr(f, 'status', 'Unknown')
+                        lines.append(f"  • [ID:{fid}] {title} ({status})")
+                    lines.append("")
+
+            lines.insert(1, f"Total: {total_unassigned}")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Error retrieving unassigned findings: {e}"
+
+    # ── Asset Intelligence ────────────────────────────────────────
+
+    @mcp.tool()
+    def get_asset_findings_count_by_type() -> str:
+        """Get a count of unresolved findings broken down by asset type."""
+        try:
+            client = get_api_client()
+            findings_api = FindingsApi(client)
+
+            asset_types = ["domain", "subdomain", "ip_address", "port", "ip_range",
+                           "cloud_storage", "repository", "container", "saas_platform", "mobile_app"]
+
+            lines = ["Unresolved Findings by Asset Type:", ""]
+            total = 0
+            for at in asset_types:
+                try:
+                    count = _count(
+                        findings_api, "get_list_findings",
+                        asset_types=at,
+                        statuses="Open,Triaged,In Progress",
+                    )
+                    total += count
+                    if count > 0:
+                        lines.append(f"  • {at.replace('_', ' ').title()}: {count}")
+                except Exception:
+                    lines.append(f"  • {at.replace('_', ' ').title()}: error")
+
+            lines.insert(1, f"Total: {total}")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Error counting findings by asset type: {e}"
+
+    @mcp.tool()
+    def get_shadow_it_candidates(days: int = 7) -> str:
+        """List newly discovered assets that are not assigned to any business unit.
+
+        Args:
+            days: Number of days to look back (default 7).
+        """
+        try:
+            client = get_api_client()
+            since = datetime.now() - timedelta(days=days)
+
+            lines = [f"Potential Shadow IT - New Assets Without Business Unit (Last {days} Days):", ""]
+            total_candidates = 0
+
+            for label, api_cls, method_name in _ASSET_API_MAP:
+                try:
+                    api = api_cls(client)
+                    method = getattr(api, method_name)
+                    response = method(created_from=since, page_size=30)
+
+                    if hasattr(response, 'data') and response.data:
+                        no_bu = []
+                        for a in response.data:
+                            bus = getattr(a, 'business_units', None)
+                            if not bus or (isinstance(bus, list) and len(bus) == 0):
+                                name = getattr(a, 'name', None) or getattr(a, 'iprange', None) or getattr(a, 'url', 'Unknown')
+                                no_bu.append(name)
+                        if no_bu:
+                            total_candidates += len(no_bu)
+                            lines.append(f"{label} ({len(no_bu)}):")
+                            for name in no_bu[:5]:
+                                lines.append(f"  • {name}")
+                            if len(no_bu) > 5:
+                                lines.append(f"  ... and {len(no_bu) - 5} more")
+                            lines.append("")
+                except Exception:
+                    pass
+
+            if total_candidates == 0:
+                return f"No unassigned new assets found in the last {days} days."
+
+            lines.insert(1, f"Total Candidates: {total_candidates}")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Error finding shadow IT candidates: {e}"
+
+
 def _fetch_asset_detail(client, asset_type: str, asset_id) -> list[str]:
     """Fetch detailed info for an asset given its type, returning formatted lines."""
     type_lower = str(asset_type).lower().replace(" ", "_")
