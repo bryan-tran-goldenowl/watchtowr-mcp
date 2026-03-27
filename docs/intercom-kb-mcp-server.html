@@ -1,0 +1,239 @@
+<h2>What is the watchTowr MCP Server?</h2>
+
+<p>The watchTowr MCP Server connects AI assistants — such as Claude, Cursor, and other MCP-compatible tools — directly to your watchTowr Platform data.</p>
+
+<p>Instead of switching between dashboards and chat windows, you can ask questions about your external attack surface in plain English and get real-time answers pulled straight from your watchTowr account.</p>
+
+<p>It works through the <a href="https://modelcontextprotocol.io/">Model Context Protocol (MCP)</a>, an open standard that lets AI assistants securely interact with external services. The MCP server acts as a bridge: your AI assistant sends a request, the server queries the watchTowr Platform API on your behalf, and returns the results in a format the assistant can reason about and present to you.</p>
+
+<p>Key highlights:</p>
+<ul>
+  <li><strong>60 tools</strong> covering the full watchTowr Platform API</li>
+  <li><strong>Read and write</strong> — query your attack surface and take action (update statuses, trigger retests, submit seed assets)</li>
+  <li><strong>Composite intelligence</strong> — built-in tools for attack surface summaries, change detection, and security posture reviews</li>
+  <li><strong>Secure</strong> — authenticates via your API key with tenant isolation; credentials never leave your environment</li>
+</ul>
+
+<hr>
+
+<h2>What Is It For?</h2>
+
+<p>The MCP server is designed to make your day-to-day work with the watchTowr Platform faster and more conversational. Here are some common use cases:</p>
+
+<h3>Get an instant attack surface overview</h3>
+<p>Ask your AI assistant for a summary and receive asset counts by type, finding counts by severity, and a snapshot of your overall posture — all in one response.</p>
+
+<h3>Triage findings through conversation</h3>
+<p>Instead of clicking through individual findings, ask questions like "show me all critical findings" or "what are the unresolved findings for business unit 5?" and get structured results you can act on immediately.</p>
+
+<h3>Track what changed this week</h3>
+<p>Use the built-in delta tools to see new assets and new findings discovered within any time window. Great for weekly security reviews or change monitoring.</p>
+
+<h3>Review hunt results and build remediation lists</h3>
+<p>Pull hunt details, see which findings a hunt produced, and generate remediation handoff lists with severity breakdowns and per-finding guidance.</p>
+
+<h3>Monitor certificates and services</h3>
+<p>Check for expiring certificates, cross-reference them with exposed services, and stay ahead of renewals before they become incidents.</p>
+
+<h3>Example prompts to try</h3>
+<ul>
+  <li>"Give me an attack surface summary"</li>
+  <li>"Show all critical findings"</li>
+  <li>"What new assets were discovered this week?"</li>
+  <li>"List certificates expiring in the next 30 days"</li>
+  <li>"Show me suspicious domains flagged for typosquatting"</li>
+  <li>"Get the details for finding 1234 and trigger a retest"</li>
+  <li>"List all findings for business unit 5"</li>
+  <li>"What hunts have been completed recently?"</li>
+  <li>"What's the security posture for business unit 3?"</li>
+  <li>"Generate a remediation list for hunt 42"</li>
+</ul>
+
+<hr>
+
+<h2>How To Use It</h2>
+
+<h3>Prerequisites</h3>
+<ol>
+  <li>A <strong>watchTowr Platform account</strong> with API access enabled.</li>
+  <li>An <strong>API Key</strong> — obtained from your watchTowr Platform dashboard under <strong>Settings &rarr; API Management</strong>.</li>
+  <li>Your <strong>Platform Host URL</strong> — your watchTowr instance URL (e.g. <code>https://your-tenant.your-region.watchtowr.io</code>).</li>
+  <li>An MCP-compatible AI assistant such as <strong>Claude Desktop</strong> or <strong>Cursor</strong>.</li>
+</ol>
+
+<h3>Option 1: Docker (recommended)</h3>
+<p>The simplest way to run the MCP server. No local dependencies required beyond Docker.</p>
+
+<p><strong>For MCP clients (Claude Desktop, Cursor):</strong></p>
+<pre><code>docker run -it --rm \
+  -e WATCHTOWR_API_KEY="your-api-key" \
+  -e WATCHTOWR_PLATFORM_HOST="https://your-tenant.your-region.watchtowr.io" \
+  ghcr.io/watchtowr/watchtowr-mcp</code></pre>
+
+<p><strong>As a standalone HTTP service:</strong></p>
+<pre><code>docker run -d --rm \
+  -e WATCHTOWR_API_KEY="your-api-key" \
+  -e WATCHTOWR_PLATFORM_HOST="https://your-tenant.your-region.watchtowr.io" \
+  -e MCP_TRANSPORT=streamable-http \
+  -p 8080:8080 \
+  ghcr.io/watchtowr/watchtowr-mcp</code></pre>
+<p>When using <code>streamable-http</code> transport, the server listens on port 8080 at <code>/mcp</code>.</p>
+
+<h3>Option 2: Local installation</h3>
+<p>For advanced users who prefer running natively. Requires <a href="https://docs.astral.sh/uv/">uv</a> (a Python package manager).</p>
+<pre><code>git clone https://github.com/watchtowr/watchtowr-mcp.git
+cd watchtowr-mcp
+git clone https://github.com/watchtowr/watchtowr-api-sdk.git
+
+uv venv
+uv pip install -e .
+uv pip install -e watchtowr-api-sdk
+
+WATCHTOWR_API_KEY="your-api-key" \
+WATCHTOWR_PLATFORM_HOST="https://your-tenant.your-region.watchtowr.io" \
+uv run watchtowr-mcp</code></pre>
+
+<h3>Connecting your AI assistant</h3>
+<p>Once the server is running, configure your MCP client to connect to it. Below are configuration snippets for common clients.</p>
+
+<p><strong>Claude Desktop / Cursor (Docker)</strong></p>
+<p>Add this to your MCP client configuration:</p>
+<pre><code>{
+  "mcpServers": {
+    "watchtowr": {
+      "command": "docker",
+      "args": [
+        "run", "--rm", "-i",
+        "--env", "WATCHTOWR_API_KEY=your-api-key",
+        "--env", "WATCHTOWR_PLATFORM_HOST=https://your-tenant.your-region.watchtowr.io",
+        "ghcr.io/watchtowr/watchtowr-mcp"
+      ]
+    }
+  }
+}</code></pre>
+
+<p><strong>Claude Desktop / Cursor (local)</strong></p>
+<pre><code>{
+  "mcpServers": {
+    "watchtowr": {
+      "command": "uv",
+      "args": [
+        "--directory", "/path/to/watchtowr-mcp",
+        "run", "watchtowr-mcp"
+      ],
+      "env": {
+        "WATCHTOWR_API_KEY": "your-api-key",
+        "WATCHTOWR_PLATFORM_HOST": "https://your-tenant.your-region.watchtowr.io"
+      }
+    }
+  }
+}</code></pre>
+
+<p>Replace <code>your-api-key</code> and the platform host URL with your actual credentials. For the local option, update <code>/path/to/watchtowr-mcp</code> to where you cloned the repository.</p>
+
+<hr>
+
+<h2>What Tools Are Available?</h2>
+
+<p>The MCP server provides <strong>60 tools</strong> organised into seven categories. Your AI assistant can call any of these on your behalf.</p>
+
+<h3>Findings (10 tools)</h3>
+<table>
+  <tr><th>Tool</th><th>Description</th></tr>
+  <tr><td><code>list_cisa_kev_findings</code></td><td>List findings tagged as CISA Known Exploited Vulnerabilities</td></tr>
+  <tr><td><code>list_findings_by_severity</code></td><td>List findings filtered by severity (Critical, High, Medium, Low)</td></tr>
+  <tr><td><code>get_finding_details</code></td><td>Get full finding detail — description, evidence, CVSS, CVE, EPSS</td></tr>
+  <tr><td><code>search_findings</code></td><td>Search with filters: title, severity, status, asset, assignee, tags, date range</td></tr>
+  <tr><td><code>update_finding_status</code></td><td>Change the status of a finding</td></tr>
+  <tr><td><code>retest_finding</code></td><td>Trigger a retest to verify remediation</td></tr>
+  <tr><td><code>get_finding_statuses</code></td><td>List available finding status values</td></tr>
+  <tr><td><code>get_findings_summary_by_severity</code></td><td>Count breakdown of findings by severity level</td></tr>
+  <tr><td><code>get_unresolved_findings_by_business_unit</code></td><td>List unresolved findings for a specific business unit</td></tr>
+  <tr><td><code>export_finding_pdf</code></td><td>Export a finding report as PDF</td></tr>
+</table>
+
+<h3>Assets (24 tools)</h3>
+<table>
+  <tr><th>Tool</th><th>Description</th></tr>
+  <tr><td><code>list_asset_ips</code></td><td>List discovered IP addresses</td></tr>
+  <tr><td><code>get_asset_ip_details</code></td><td>Full detail for a specific IP address</td></tr>
+  <tr><td><code>list_ports_for_ip</code></td><td>List all ports discovered on a specific IP</td></tr>
+  <tr><td><code>get_ip_port_details</code></td><td>Full detail for a port scoped to an IP address</td></tr>
+  <tr><td><code>list_asset_domains</code></td><td>List discovered root domains</td></tr>
+  <tr><td><code>get_asset_domain_details</code></td><td>Full detail for a specific domain</td></tr>
+  <tr><td><code>list_asset_subdomains</code></td><td>List discovered subdomains</td></tr>
+  <tr><td><code>get_asset_subdomain_details</code></td><td>Full detail for a specific subdomain</td></tr>
+  <tr><td><code>list_asset_ports</code></td><td>List open ports with service and banner info</td></tr>
+  <tr><td><code>get_asset_port_details</code></td><td>Full detail for a specific port</td></tr>
+  <tr><td><code>list_asset_ip_ranges</code></td><td>List discovered IP ranges with ASN and country</td></tr>
+  <tr><td><code>get_asset_iprange_details</code></td><td>Full detail for a specific IP range</td></tr>
+  <tr><td><code>list_cloud_storage_assets</code></td><td>List cloud storage buckets (S3, GCS, Azure)</td></tr>
+  <tr><td><code>get_asset_cloud_storage_details</code></td><td>Full detail for a specific cloud storage asset</td></tr>
+  <tr><td><code>list_source_code_repositories</code></td><td>List discovered code repositories</td></tr>
+  <tr><td><code>get_asset_repository_details</code></td><td>Full detail for a specific repository</td></tr>
+  <tr><td><code>list_container_assets</code></td><td>List discovered container registry images</td></tr>
+  <tr><td><code>get_asset_container_details</code></td><td>Full detail for a specific container image</td></tr>
+  <tr><td><code>list_saas_platforms</code></td><td>List discovered SaaS platform instances</td></tr>
+  <tr><td><code>get_asset_saas_details</code></td><td>Full detail for a specific SaaS platform</td></tr>
+  <tr><td><code>list_mobile_app_assets</code></td><td>List discovered mobile applications</td></tr>
+  <tr><td><code>get_asset_mobile_app_details</code></td><td>Full detail for a specific mobile application</td></tr>
+  <tr><td><code>update_asset_status</code></td><td>Update the status of any asset type</td></tr>
+  <tr><td><code>add_seed_asset</code></td><td>Submit a new seed asset for discovery</td></tr>
+</table>
+
+<h3>Hunts (6 tools)</h3>
+<table>
+  <tr><th>Tool</th><th>Description</th></tr>
+  <tr><td><code>list_recent_hunts</code></td><td>List recent hunts with finding and asset counts</td></tr>
+  <tr><td><code>get_hunt_details</code></td><td>Full hunt detail — description, hypothesis, references</td></tr>
+  <tr><td><code>list_findings_by_hunt</code></td><td>List findings discovered by a specific hunt</td></tr>
+  <tr><td><code>list_assets_by_hunt</code></td><td>List assets tested by a specific hunt</td></tr>
+  <tr><td><code>search_hunts</code></td><td>Search hunts by keyword, status, type, priority, date</td></tr>
+  <tr><td><code>get_hunt_impact_summary</code></td><td>Combined summary: detail, severity breakdown, assets tested</td></tr>
+</table>
+
+<h3>Threat Intelligence (6 tools)</h3>
+<table>
+  <tr><th>Tool</th><th>Description</th></tr>
+  <tr><td><code>list_suspicious_domains</code></td><td>List domains flagged for typosquatting or brand impersonation</td></tr>
+  <tr><td><code>get_suspicious_domain_details</code></td><td>Full detail including WHOIS data</td></tr>
+  <tr><td><code>list_points_of_interest</code></td><td>List leaked credentials, exposed configs, interesting endpoints</td></tr>
+  <tr><td><code>list_certificates</code></td><td>List SSL/TLS certificates with subject, issuer, and expiry</td></tr>
+  <tr><td><code>get_certificate_details</code></td><td>Full certificate detail including SANs and key info</td></tr>
+  <tr><td><code>get_expiring_certificates</code></td><td>List certificates expiring within N days</td></tr>
+</table>
+
+<h3>Services (2 tools)</h3>
+<table>
+  <tr><th>Tool</th><th>Description</th></tr>
+  <tr><td><code>list_services</code></td><td>List exposed services with technology stack and country</td></tr>
+  <tr><td><code>search_services_by_technology</code></td><td>Search services by technology, port, or service type</td></tr>
+</table>
+
+<h3>Organisation (5 tools)</h3>
+<table>
+  <tr><th>Tool</th><th>Description</th></tr>
+  <tr><td><code>get_watchtowr_source_ips</code></td><td>Get source IPs to whitelist for watchTowr scanning</td></tr>
+  <tr><td><code>get_activity_logs</code></td><td>Get recent platform activity logs</td></tr>
+  <tr><td><code>search_activity_logs</code></td><td>Search logs by type, user, keyword, and date range</td></tr>
+  <tr><td><code>list_business_units</code></td><td>List business units (useful for filtering other tools)</td></tr>
+  <tr><td><code>get_business_unit_details</code></td><td>Full detail for a specific business unit</td></tr>
+</table>
+
+<h3>Composite Intelligence (7 tools)</h3>
+<table>
+  <tr><th>Tool</th><th>Description</th></tr>
+  <tr><td><code>get_attack_surface_summary</code></td><td>Asset counts by type and finding counts by severity</td></tr>
+  <tr><td><code>get_new_assets_since</code></td><td>All newly discovered assets across every type within N days</td></tr>
+  <tr><td><code>get_attack_surface_delta</code></td><td>Combined new assets + new findings within a time window</td></tr>
+  <tr><td><code>get_business_unit_posture</code></td><td>Full security posture for a BU: findings, assets, services, certs</td></tr>
+  <tr><td><code>get_finding_with_asset_context</code></td><td>Finding details enriched with the related asset's full details</td></tr>
+  <tr><td><code>get_expiring_certificates_with_services</code></td><td>Expiring certs cross-referenced with exposed services</td></tr>
+  <tr><td><code>get_hunt_remediation_list</code></td><td>Hunt findings expanded with details for remediation handoff</td></tr>
+</table>
+
+<hr>
+
+<p>For more technical details, source code, and contribution guidelines, visit the <a href="https://github.com/watchtowr/watchtowr-mcp">watchTowr MCP Server GitHub repository</a>.</p>
+
+<p>Need help? Contact the <a href="mailto:support@watchtowr.io">watchTowr support team</a> or refer to the <a href="https://apidocs.watchtowr.com">watchTowr Platform API Documentation</a>.</p>
