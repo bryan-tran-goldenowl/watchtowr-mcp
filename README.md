@@ -4,9 +4,9 @@ A [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server that c
 
 ## Features
 
-- **60 tools** covering the full watchTowr Platform API — assets, findings, hunts, certificates, suspicious domains, and more
+- **88 tools** covering the full watchTowr Platform API — assets, findings, hunts, certificates, suspicious domains, and more
 - **Read and write** — query your attack surface and take action (update statuses, trigger retests, submit seed assets)
-- **Composite intelligence** — built-in tools for attack surface summaries, new asset detection, and severity breakdowns
+- **Composite intelligence** — built-in tools for attack surface summaries, change detection, executive scorecards, and compliance reporting
 - **Secure** — authenticates via API key with tenant isolation; credentials never leave your environment
 
 ## Prerequisites
@@ -192,7 +192,7 @@ docker run -d --rm \
 | `list_business_units` | List business units (useful for filtering other tools) |
 | `get_business_unit_details` | Full detail for a specific business unit |
 
-### Composite (7 tools)
+### Composite & Triage (13 tools)
 
 | Tool | Description |
 |------|-------------|
@@ -203,6 +203,49 @@ docker run -d --rm \
 | `get_finding_with_asset_context` | Finding details enriched with the related asset's full details |
 | `get_expiring_certificates_with_services` | Expiring certs cross-referenced with exposed services |
 | `get_hunt_remediation_list` | Hunt findings expanded with details for remediation handoff |
+| `get_critical_exposure_report` | Executive headlines: critical/high counts, CISA-KEV, expiring certs, top findings |
+| `get_findings_by_asset` | Search findings associated with a specific asset |
+| `get_stale_findings` | Findings open longer than N days |
+| `get_unassigned_critical_findings` | Critical/high findings with no assignee |
+| `get_asset_findings_count_by_type` | Unresolved findings heatmap by asset type |
+| `get_shadow_it_candidates` | New assets not assigned to any business unit |
+
+### Reporting & Compliance (11 tools)
+
+| Tool | Description |
+|------|-------------|
+| `get_asset_inventory_by_business_unit` | Full asset inventory for a business unit |
+| `get_out_of_scope_assets` | All assets marked as out of scope or excluded |
+| `get_verified_vs_unverified_assets` | Asset verification status breakdown across all types |
+| `get_finding_age_distribution` | Findings bucketed by age (0-7d, 7-30d, 30-90d, 90d+) and severity |
+| `get_finding_status_timeline` | Opened vs remediated findings per week |
+| `get_open_ports_summary` | Most common open ports with service counts |
+| `get_assets_without_findings` | Asset types with assets but zero findings — coverage gaps |
+| `get_certificate_health_report` | Certificates grouped by health: expired, expiring, valid |
+| `get_executive_risk_scorecard` | Single-call executive dashboard: assets, findings, KEV, cert health |
+| `get_week_over_week_delta` | Weekly trend report: new assets and findings per week |
+| `get_top_findings_by_occurrence` | Most frequently recurring finding titles — systemic issues |
+
+### Incident Response (5 tools)
+
+| Tool | Description |
+|------|-------------|
+| `search_assets_by_country` | Find all IPs and services in a specific country |
+| `get_internet_facing_services_summary` | Exposed services grouped by type with counts |
+| `get_assets_by_technology` | Find all services running a specific technology |
+| `get_cisa_kev_remediation_status` | CISA-KEV findings grouped by remediation status |
+| `find_related_assets` | Blast radius mapping: subdomains, ports, services for an asset |
+
+### Workflow & Automation (6 tools)
+
+| Tool | Description |
+|------|-------------|
+| `get_recent_remediations` | Findings remediated within the last N days |
+| `get_daily_digest` | 24-hour digest: new assets, new findings, activity log |
+| `bulk_retest_findings` | Trigger retests for multiple findings at once |
+| `bulk_update_finding_status` | Update the status of multiple findings at once |
+| `get_actionable_findings_queue` | Prioritized queue of open findings by severity and age |
+| `get_findings_needing_assignment` | Unassigned open findings grouped by severity — triage inbox |
 
 ## Example Prompts
 
@@ -215,6 +258,15 @@ docker run -d --rm \
 "Get the details for finding 1234 and trigger a retest"
 "List all findings for business unit 5"
 "What hunts have been completed recently?"
+"Give me the executive risk scorecard"
+"Show me stale findings older than 30 days"
+"What critical findings are unassigned?"
+"Run a daily digest"
+"Bulk retest findings 101,102,103"
+"Show me all assets in country CN"
+"What services are running Apache?"
+"Give me the CISA-KEV remediation status"
+"Compare week-over-week changes for the last 4 weeks"
 ```
 
 ## Development
@@ -235,7 +287,10 @@ watchtowr-mcp/
 │       ├── threat_intel.py    # Suspicious domains, POI, certificates
 │       ├── services.py        # Service listing tools
 │       ├── organization.py    # Business units, activity logs, source IPs
-│       └── composite.py       # Cross-cutting intelligence and posture tools
+│       ├── composite.py       # Cross-cutting intelligence, triage, and posture tools
+│       ├── reporting.py       # Compliance, audit, executive reporting tools
+│       ├── incident.py        # Incident response and threat hunting tools
+│       └── workflow.py        # Bulk operations, queues, and automation tools
 ├── pyproject.toml
 ├── Dockerfile
 └── README.md
