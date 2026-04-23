@@ -2,10 +2,12 @@ import os
 
 from fastmcp import FastMCP
 
+from .sdk_compat import apply_watchtowr_sdk_compat_patches
 from .tools import register_all_tools
 
 
 def main():
+    apply_watchtowr_sdk_compat_patches()
     mcp = FastMCP("watchtowr")
     register_all_tools(mcp)
 
