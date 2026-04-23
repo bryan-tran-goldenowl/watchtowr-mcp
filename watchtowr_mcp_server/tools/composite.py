@@ -17,7 +17,8 @@ from watchtowr_api.api.asset_saa_s_platforms_api import AssetSaaSPlatformsApi
 from watchtowr_api.api.asset_mobile_applications_api import AssetMobileApplicationsApi
 from watchtowr_api.api.points_of_interest_api import PointsOfInterestApi
 
-from ..client import get_api_client, get_total, parse_date, format_bus
+from ..client import get_api_client, get_total, parse_date, format_bus, severity_display
+from ..constants import SUMMARY_SEVERITIES
 
 
 _ASSET_API_MAP = [
@@ -58,7 +59,7 @@ def register_composite_tools(mcp):
 
             findings_api = FindingsApi(client)
             finding_counts = {}
-            for severity in ["Critical", "High", "Medium", "Low"]:
+            for severity in SUMMARY_SEVERITIES:
                 try:
                     finding_counts[severity] = _count(
                         findings_api, "get_list_findings", severities=severity
@@ -79,7 +80,7 @@ def register_composite_tools(mcp):
 
             lines.append(f"\nFindings (Total: {total_findings}):")
             for severity, count in finding_counts.items():
-                lines.append(f"  • {severity}: {count}")
+                lines.append(f"  • {severity_display(severity)}: {count}")
 
             return "\n".join(lines)
         except Exception as e:
@@ -167,7 +168,7 @@ def register_composite_tools(mcp):
             findings_api = FindingsApi(client)
             total_new_findings = 0
             findings_lines = []
-            for severity in ["Critical", "High", "Medium", "Low"]:
+            for severity in SUMMARY_SEVERITIES:
                 try:
                     count = _count(
                         findings_api, "get_list_findings",
@@ -175,9 +176,9 @@ def register_composite_tools(mcp):
                     )
                     if count > 0:
                         total_new_findings += count
-                    findings_lines.append(f"  • {severity}: +{count}")
+                    findings_lines.append(f"  • {severity_display(severity)}: +{count}")
                 except Exception:
-                    findings_lines.append(f"  • {severity}: error")
+                    findings_lines.append(f"  • {severity_display(severity)}: error")
 
             lines.append(f"New Findings ({total_new_findings}):")
             lines.extend(findings_lines)
@@ -215,7 +216,7 @@ def register_composite_tools(mcp):
             lines.append("Unresolved Findings:")
             findings_api = FindingsApi(client)
             total_findings = 0
-            for severity in ["Critical", "High", "Medium", "Low"]:
+            for severity in SUMMARY_SEVERITIES:
                 try:
                     count = _count(
                         findings_api, "get_list_findings",
@@ -224,9 +225,9 @@ def register_composite_tools(mcp):
                         statuses="Open,Triaged,In Progress",
                     )
                     total_findings += count
-                    lines.append(f"  • {severity}: {count}")
+                    lines.append(f"  • {severity_display(severity)}: {count}")
                 except Exception:
-                    lines.append(f"  • {severity}: error")
+                    lines.append(f"  • {severity_display(severity)}: error")
             lines.append(f"  Total: {total_findings}")
             lines.append("")
 
@@ -306,7 +307,7 @@ def register_composite_tools(mcp):
             lines = [
                 f"Finding #{getattr(f, 'id', finding_id)}",
                 f"Title: {getattr(f, 'title', 'N/A')}",
-                f"Severity: {getattr(f, 'severity', 'N/A')}",
+                f"Severity: {severity_display(getattr(f, 'severity', None))}",
                 f"Status: {getattr(f, 'status', 'N/A')}",
                 f"Category: {getattr(f, 'category', 'N/A')}",
                 f"Created: {getattr(f, 'created_at', 'N/A')}",
@@ -466,7 +467,8 @@ def register_composite_tools(mcp):
             for idx, finding in enumerate(findings_resp.data, 1):
                 fid = getattr(finding, 'id', '')
                 title = getattr(finding, 'title', 'N/A')
-                severity = getattr(finding, 'severity', 'N/A')
+                raw_severity = getattr(finding, 'severity', None)
+                severity = severity_display(raw_severity) if raw_severity else 'N/A'
                 status = getattr(finding, 'status', 'N/A')
                 severity_counts[severity] = severity_counts.get(severity, 0) + 1
 
@@ -522,14 +524,14 @@ def register_composite_tools(mcp):
             lines = ["Critical Exposure Report", ""]
 
             severity_counts = {}
-            for severity in ["Critical", "High", "Medium", "Low"]:
+            for severity in SUMMARY_SEVERITIES:
                 try:
                     severity_counts[severity] = _count(findings_api, "get_list_findings", severities=severity)
                 except Exception:
                     severity_counts[severity] = "error"
             lines.append("Findings by Severity:")
             for sev, count in severity_counts.items():
-                lines.append(f"  • {sev}: {count}")
+                lines.append(f"  • {severity_display(sev)}: {count}")
             lines.append("")
 
             try:
@@ -547,7 +549,7 @@ def register_composite_tools(mcp):
             lines.append("")
 
             try:
-                resp = findings_api.get_list_findings(severities="Critical,High", page_size=30)
+                resp = findings_api.get_list_findings(severities="critical,high", page_size=30)
                 if hasattr(resp, 'data') and resp.data:
                     title_counts = {}
                     for f in resp.data:
@@ -595,7 +597,7 @@ def register_composite_tools(mcp):
             lines = [f"Findings for {asset_type} '{asset_name}' (ID: {asset_id}):", ""]
             for f in resp.data:
                 fid = getattr(f, 'id', '')
-                sev = getattr(f, 'severity', 'Unknown')
+                sev = severity_display(getattr(f, 'severity', None))
                 title = getattr(f, 'title', 'No title')
                 status = getattr(f, 'status', 'Unknown')
                 lines.append(f"• [ID:{fid}] [{sev}] {title} ({status})")
@@ -632,7 +634,7 @@ def register_composite_tools(mcp):
             lines = [f"Stale Findings (Open > {days} Days):", ""]
             for f in resp.data:
                 fid = getattr(f, 'id', '')
-                sev = getattr(f, 'severity', 'Unknown')
+                sev = severity_display(getattr(f, 'severity', None))
                 title = getattr(f, 'title', 'No title')
                 status = getattr(f, 'status', 'Unknown')
                 created = getattr(f, 'created_at', '')
@@ -658,7 +660,7 @@ def register_composite_tools(mcp):
             lines = ["Unassigned Critical/High Findings:", ""]
             total_unassigned = 0
 
-            for severity in ["Critical", "High"]:
+            for severity in SUMMARY_SEVERITIES[:2]:  # critical, high
                 resp = findings_api.get_list_findings(
                     severities=severity,
                     statuses="Open,Triaged,In Progress",
@@ -669,7 +671,7 @@ def register_composite_tools(mcp):
                 total_unassigned += count
 
                 if hasattr(resp, 'data') and resp.data:
-                    lines.append(f"{severity} ({count}):")
+                    lines.append(f"{severity_display(severity)} ({count}):")
                     for f in resp.data:
                         fid = getattr(f, 'id', '')
                         title = getattr(f, 'title', 'No title')

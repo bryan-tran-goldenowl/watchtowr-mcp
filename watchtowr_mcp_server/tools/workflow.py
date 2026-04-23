@@ -4,7 +4,8 @@ from watchtowr_api.api.findings_api import FindingsApi
 from watchtowr_api.api.activity_log_api import ActivityLogApi
 from watchtowr_api.models.update_client_finding_status_request_body import UpdateClientFindingStatusRequestBody
 
-from ..client import get_api_client, get_total, parse_date
+from ..client import get_api_client, get_total, parse_date, severity_display
+from ..constants import SUMMARY_SEVERITIES
 from .composite import _ASSET_API_MAP, _count
 
 
@@ -39,7 +40,7 @@ def register_workflow_tools(mcp):
 
             for f in resp.data:
                 fid = getattr(f, 'id', '')
-                sev = getattr(f, 'severity', 'Unknown')
+                sev = severity_display(getattr(f, 'severity', None))
                 title = getattr(f, 'title', 'No title')
                 lines.append(f"• [ID:{fid}] [{sev}] {title}")
 
@@ -58,7 +59,7 @@ def register_workflow_tools(mcp):
             findings_api = FindingsApi(client)
             new_findings = 0
             findings_by_sev = {}
-            for sev in ["Critical", "High", "Medium", "Low"]:
+            for sev in SUMMARY_SEVERITIES:
                 try:
                     c = _count(findings_api, "get_list_findings", severities=sev, created_from=since)
                     new_findings += c
@@ -69,7 +70,7 @@ def register_workflow_tools(mcp):
 
             lines.append(f"New Findings: {new_findings}")
             for sev, count in findings_by_sev.items():
-                lines.append(f"  • {sev}: +{count}")
+                lines.append(f"  • {severity_display(sev)}: +{count}")
             lines.append("")
 
             new_assets = 0
@@ -189,7 +190,7 @@ def register_workflow_tools(mcp):
             lines = []
 
             all_findings = []
-            for sev in ["Critical", "High", "Medium", "Low"]:
+            for sev in SUMMARY_SEVERITIES:
                 kwargs = {
                     "severities": sev,
                     "statuses": "Open,Triaged,In Progress",
@@ -202,7 +203,7 @@ def register_workflow_tools(mcp):
                     resp = findings_api.get_list_findings(**kwargs)
                     if hasattr(resp, 'data') and resp.data:
                         for f in resp.data:
-                            all_findings.append((sev, f))
+                            all_findings.append((severity_display(sev), f))
                 except Exception:
                     pass
 
@@ -242,7 +243,8 @@ def register_workflow_tools(mcp):
             lines = ["Findings Needing Assignment:", ""]
             total_unassigned = 0
 
-            for sev in ["Critical", "High", "Medium", "Low"]:
+            for sev in SUMMARY_SEVERITIES:
+                display_sev = severity_display(sev)
                 try:
                     resp = findings_api.get_list_findings(
                         severities=sev,
@@ -254,7 +256,7 @@ def register_workflow_tools(mcp):
                     total_unassigned += count
 
                     if count > 0:
-                        lines.append(f"{sev} ({count}):")
+                        lines.append(f"{display_sev} ({count}):")
                         if hasattr(resp, 'data') and resp.data:
                             for f in resp.data[:10]:
                                 fid = getattr(f, 'id', '')
@@ -265,7 +267,7 @@ def register_workflow_tools(mcp):
                                 lines.append(f"  ... and {count - 10} more")
                         lines.append("")
                 except Exception:
-                    lines.append(f"{sev}: error")
+                    lines.append(f"{display_sev}: error")
                     lines.append("")
 
             lines.insert(1, f"Total Unassigned: {total_unassigned}")

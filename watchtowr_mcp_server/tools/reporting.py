@@ -15,7 +15,8 @@ from watchtowr_api.api.asset_containers_api import AssetContainersApi
 from watchtowr_api.api.asset_saa_s_platforms_api import AssetSaaSPlatformsApi
 from watchtowr_api.api.asset_mobile_applications_api import AssetMobileApplicationsApi
 
-from ..client import get_api_client, get_total, parse_date
+from ..client import get_api_client, get_total, parse_date, severity_display
+from ..constants import SUMMARY_SEVERITIES
 
 _ASSET_API_MAP = [
     ("IP Addresses", AssetIPAddressesApi, "get_list_asset_ips"),
@@ -192,13 +193,13 @@ def register_reporting_tools(mcp):
                     count = "error"
 
                 severity_breakdown = []
-                for sev in ["Critical", "High", "Medium", "Low"]:
+                for sev in SUMMARY_SEVERITIES:
                     try:
                         sev_kwargs = {**kwargs, "severities": sev}
                         sev_kwargs.pop("page_size", None)
                         sev_count = _count(findings_api, "get_list_findings", **sev_kwargs)
                         if sev_count > 0:
-                            severity_breakdown.append(f"{sev[0]}:{sev_count}")
+                            severity_breakdown.append(f"{sev[0].upper()}:{sev_count}")
                     except Exception:
                         pass
 
@@ -408,13 +409,13 @@ def register_reporting_tools(mcp):
 
             lines.append("\nFindings:")
             total_findings = 0
-            for sev in ["Critical", "High", "Medium", "Low"]:
+            for sev in SUMMARY_SEVERITIES:
                 try:
                     c = _count(findings_api, "get_list_findings", severities=sev, statuses="Open,Triaged,In Progress")
                     total_findings += c
-                    lines.append(f"  • {sev}: {c}")
+                    lines.append(f"  • {severity_display(sev)}: {c}")
                 except Exception:
-                    lines.append(f"  • {sev}: error")
+                    lines.append(f"  • {severity_display(sev)}: error")
             lines.append(f"  Total Open: {total_findings}")
 
             try:
@@ -519,7 +520,7 @@ def register_reporting_tools(mcp):
             title_data = {}
             for f in resp.data:
                 title = getattr(f, 'title', 'Unknown')
-                sev = getattr(f, 'severity', 'Unknown')
+                sev = severity_display(getattr(f, 'severity', None))
                 if title not in title_data:
                     title_data[title] = {"count": 0, "severity": sev}
                 title_data[title]["count"] += 1

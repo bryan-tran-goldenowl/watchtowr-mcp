@@ -1,6 +1,6 @@
 from watchtowr_api.api.hunts_api import HuntsApi
 
-from ..client import get_api_client, get_total, parse_date
+from ..client import get_api_client, get_total, parse_date, severity_display
 
 
 def register_hunt_tools(mcp):
@@ -126,7 +126,7 @@ def register_hunt_tools(mcp):
             lines = []
             for f in response.data:
                 fid = getattr(f, 'id', '')
-                severity = getattr(f, 'severity', 'Unknown')
+                severity = severity_display(getattr(f, 'severity', None))
                 title = getattr(f, 'title', 'No title')
                 status = getattr(f, 'status', 'Unknown')
                 lines.append(f"• [ID:{fid}] [{severity}] {title} ({status})")
@@ -275,14 +275,15 @@ def register_hunt_tools(mcp):
             if hasattr(findings_resp, 'data') and findings_resp.data:
                 severity_counts = {}
                 for f in findings_resp.data:
-                    sev = getattr(f, 'severity', 'Unknown')
+                    sev = severity_display(getattr(f, 'severity', None))
                     severity_counts[sev] = severity_counts.get(sev, 0) + 1
                 lines.append("\nFindings by Severity:")
-                for sev in ["Critical", "High", "Medium", "Low"]:
+                ordered_sevs = ["Critical", "High", "Medium", "Low", "Info"]
+                for sev in ordered_sevs:
                     if sev in severity_counts:
                         lines.append(f"  • {sev}: {severity_counts[sev]}")
                 unknown_sevs = {k: v for k, v in severity_counts.items()
-                                if k not in ["Critical", "High", "Medium", "Low"]}
+                                if k not in ordered_sevs}
                 for sev, count in unknown_sevs.items():
                     lines.append(f"  • {sev}: {count}")
 
