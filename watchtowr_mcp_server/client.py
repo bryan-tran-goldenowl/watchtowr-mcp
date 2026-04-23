@@ -79,6 +79,28 @@ def parse_date(date_str: str | None) -> datetime | None:
     return datetime.fromisoformat(date_str.replace("Z", "+00:00"))
 
 
+def normalize_severities(value: str | None) -> str | None:
+    """Normalize a comma-separated severities string for the watchTowr API.
+
+    The API only accepts lowercase values ('critical', 'high', 'medium',
+    'low', 'info'). Callers and users frequently pass title-case values
+    like 'Critical' or 'High', which the API rejects with a 400
+    "Severities not valid!" error. Lowercase the input and strip
+    whitespace so the downstream call succeeds regardless of casing.
+    """
+    if not value:
+        return value
+    parts = [p.strip().lower() for p in value.split(",") if p.strip()]
+    return ",".join(parts) if parts else None
+
+
+def severity_display(value) -> str:
+    """Format an API severity value (lowercase) for user-facing display."""
+    if not value:
+        return "Unknown"
+    return str(value).capitalize()
+
+
 def format_bus(business_units) -> str:
     """Format a list of business unit model objects into a display string."""
     if not business_units:

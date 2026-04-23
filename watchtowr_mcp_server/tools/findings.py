@@ -1,7 +1,8 @@
 from watchtowr_api.api.findings_api import FindingsApi
 from watchtowr_api.models.update_client_finding_status_request_body import UpdateClientFindingStatusRequestBody
 
-from ..client import get_api_client, get_total, parse_date
+from ..client import get_api_client, get_total, normalize_severities, parse_date, severity_display
+from ..constants import SUMMARY_SEVERITIES
 
 
 def register_findings_tools(mcp):
@@ -24,7 +25,7 @@ def register_findings_tools(mcp):
             lines = []
             for f in response.data:
                 fid = getattr(f, 'id', '')
-                severity = getattr(f, 'severity', 'Unknown')
+                severity = severity_display(getattr(f, 'severity', None))
                 title = getattr(f, 'title', 'No title')
                 status = getattr(f, 'status', 'Unknown')
                 lines.append(f"• [ID:{fid}] [{severity}] {title} ({status})")
@@ -47,7 +48,10 @@ def register_findings_tools(mcp):
         """
         try:
             api = FindingsApi(get_api_client())
-            response = api.get_list_findings(severities=severity, page_size=min(page_size, 30))
+            response = api.get_list_findings(
+                severities=normalize_severities(severity),
+                page_size=min(page_size, 30),
+            )
 
             if not hasattr(response, 'data') or not response.data:
                 return f"No {severity} severity findings found."
@@ -85,7 +89,7 @@ def register_findings_tools(mcp):
 
             lines = [f"Finding #{getattr(finding, 'id', finding_id)}"]
             lines.append(f"Title: {getattr(finding, 'title', 'N/A')}")
-            lines.append(f"Severity: {getattr(finding, 'severity', 'N/A')}")
+            lines.append(f"Severity: {severity_display(getattr(finding, 'severity', None))}")
             lines.append(f"Status: {getattr(finding, 'status', 'N/A')}")
 
             cvss = getattr(finding, 'cvssv3_score', None)
@@ -173,7 +177,7 @@ def register_findings_tools(mcp):
             if finding_title:
                 kwargs["finding_title"] = finding_title
             if severities:
-                kwargs["severities"] = severities
+                kwargs["severities"] = normalize_severities(severities)
             if statuses:
                 kwargs["statuses"] = statuses
             if asset_title:
@@ -202,7 +206,7 @@ def register_findings_tools(mcp):
             lines = []
             for f in response.data:
                 fid = getattr(f, 'id', '')
-                sev = getattr(f, 'severity', 'Unknown')
+                sev = severity_display(getattr(f, 'severity', None))
                 title = getattr(f, 'title', 'No title')
                 status = getattr(f, 'status', 'Unknown')
                 lines.append(f"• [ID:{fid}] [{sev}] {title} ({status})")
@@ -294,7 +298,7 @@ def register_findings_tools(mcp):
         try:
             api = FindingsApi(get_api_client())
             summary = {}
-            for severity in ["Critical", "High", "Medium", "Low"]:
+            for severity in SUMMARY_SEVERITIES:
                 response = api.get_list_findings(severities=severity, page_size=1)
                 count = get_total(response) or (len(response.data) if hasattr(response, 'data') and response.data else 0)
                 summary[severity] = count
@@ -302,7 +306,7 @@ def register_findings_tools(mcp):
             total = sum(summary.values())
             lines = [f"Findings Summary (Total: {total}):"]
             for severity, count in summary.items():
-                lines.append(f"• {severity}: {count}")
+                lines.append(f"• {severity_display(severity)}: {count}")
             return "\n".join(lines)
         except Exception as e:
             return f"Error generating findings summary: {e}"
@@ -330,7 +334,7 @@ def register_findings_tools(mcp):
                 "page_size": min(page_size, 30),
             }
             if severities:
-                kwargs["severities"] = severities
+                kwargs["severities"] = normalize_severities(severities)
 
             response = api.get_list_findings(**kwargs)
 
@@ -341,7 +345,7 @@ def register_findings_tools(mcp):
             lines = []
             for f in response.data:
                 fid = getattr(f, 'id', '')
-                sev = getattr(f, 'severity', 'Unknown')
+                sev = severity_display(getattr(f, 'severity', None))
                 title = getattr(f, 'title', 'No title')
                 status = getattr(f, 'status', 'Unknown')
                 lines.append(f"• [ID:{fid}] [{sev}] {title} ({status})")
