@@ -14,7 +14,7 @@ A [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server that c
 - **watchTowr Platform account** with API access enabled
 - **API Key** — obtained from your watchTowr Platform dashboard under Settings → API Management
 - **Platform Host** — your watchTowr instance URL (e.g. `https://your-tenant.your-region.watchtowr.io`)
-- **Python 3.10+** and [uv](https://docs.astral.sh/uv/) (for local installation), or **Docker**
+- **Python 3.10+** and [uv](https://docs.astral.sh/uv/) (for local installation), or **Docker** (the image is built from this repository — no public image is published)
 
 ## Quick Start
 
@@ -38,16 +38,31 @@ WATCHTOWR_PLATFORM_HOST="https://your-tenant.your-region.watchtowr.io" \
 uv run watchtowr-mcp
 ```
 
-### Docker (stdio — for MCP clients)
+### Docker
+
+> **Build your own image.** For supply-chain security, we recommend building the
+> Docker image from this repository yourself rather than pulling a pre-built
+> image. Building locally lets you audit the source, pin dependencies, and run
+> the container with full provenance over what's inside it.
+
+Build the image locally (one-time setup):
+
+```bash
+git clone https://github.com/watchtowr/watchtowr-mcp.git
+cd watchtowr-mcp
+docker build -t watchtowr-mcp .
+```
+
+#### stdio — for MCP clients
 
 ```bash
 docker run -it --rm \
   -e WATCHTOWR_API_KEY="your-api-key" \
   -e WATCHTOWR_PLATFORM_HOST="https://your-tenant.your-region.watchtowr.io" \
-  ghcr.io/watchtowr/watchtowr-mcp
+  watchtowr-mcp
 ```
 
-### Docker (HTTP — standalone service)
+#### HTTP — standalone service
 
 ```bash
 docker run -d --rm \
@@ -55,7 +70,7 @@ docker run -d --rm \
   -e WATCHTOWR_PLATFORM_HOST="https://your-tenant.your-region.watchtowr.io" \
   -e MCP_TRANSPORT=streamable-http \
   -p 8080:8080 \
-  ghcr.io/watchtowr/watchtowr-mcp
+  watchtowr-mcp
 ```
 
 ## MCP Client Configuration
@@ -82,6 +97,8 @@ docker run -d --rm \
 
 ### Claude Desktop / Cursor (Docker)
 
+> Build the `watchtowr-mcp` image first — see the [Docker](#docker) section above.
+
 ```json
 {
   "mcpServers": {
@@ -91,7 +108,7 @@ docker run -d --rm \
         "run", "--rm", "-i",
         "--env", "WATCHTOWR_API_KEY=your-api-key",
         "--env", "WATCHTOWR_PLATFORM_HOST=https://your-tenant.your-region.watchtowr.io",
-        "ghcr.io/watchtowr/watchtowr-mcp"
+        "watchtowr-mcp"
       ]
     }
   }
@@ -294,17 +311,6 @@ watchtowr-mcp/
 ├── pyproject.toml
 ├── Dockerfile
 └── README.md
-```
-
-### Building the Docker Image
-
-```bash
-docker build -t watchtowr-mcp .
-
-docker run -it --rm \
-  -e WATCHTOWR_API_KEY="your-key" \
-  -e WATCHTOWR_PLATFORM_HOST="https://your-tenant.your-region.watchtowr.io" \
-  watchtowr-mcp
 ```
 
 ## Support
