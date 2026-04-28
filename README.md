@@ -14,7 +14,7 @@ A [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server that c
 - **watchTowr Platform account** with API access enabled
 - **API Key** — obtained from your watchTowr Platform dashboard under Settings → API Management
 - **Platform Host** — your watchTowr instance URL (e.g. `https://your-tenant.your-region.watchtowr.io`)
-- **Python 3.10+** and [uv](https://docs.astral.sh/uv/) (for local installation), or **Docker** (the image is built from this repository — no public image is published)
+- **Python 3.10+** and [uv](https://docs.astral.sh/uv/) (for local installation), or **Docker**
 
 ## Quick Start
 
@@ -40,12 +40,7 @@ uv run watchtowr-mcp
 
 ### Docker
 
-> **Build your own image.** For supply-chain security, we recommend building the
-> Docker image from this repository yourself rather than pulling a pre-built
-> image. Building locally lets you audit the source, pin dependencies, and run
-> the container with full provenance over what's inside it.
-
-Build the image locally (one-time setup):
+Build the image (one-time setup):
 
 ```bash
 git clone https://github.com/watchtowr/watchtowr-mcp.git
