@@ -40,7 +40,7 @@ uv run watchtowr-mcp
 
 ### Docker
 
-Build the image (one-time setup):
+Build the image:
 
 ```bash
 git clone https://github.com/watchtowr/watchtowr-mcp.git
