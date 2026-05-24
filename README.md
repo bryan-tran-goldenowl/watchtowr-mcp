@@ -20,22 +20,26 @@ A [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server that c
 
 ### Local Installation
 
+The `watchtowr-api-sdk` lives in a sibling submodule — clone with `--recurse-submodules` (or run `git submodule update --init --recursive` after a plain clone).
+
 ```bash
-git clone https://github.com/watchtowr/watchtowr-mcp.git
+git clone --recurse-submodules https://github.com/watchtowr/watchtowr-mcp.git
 cd watchtowr-mcp
 
-# Clone the API SDK
-git clone https://github.com/watchtowr/watchtowr-api-sdk.git
-
-# Install dependencies
-uv venv
-uv pip install -e .
-uv pip install -e watchtowr-api-sdk
+# Install everything in one step (uv resolves the SDK from the submodule)
+uv sync
 
 # Run the server
 WATCHTOWR_API_KEY="your-api-key" \
 WATCHTOWR_PLATFORM_HOST="https://your-tenant.your-region.watchtowr.io" \
 uv run watchtowr-mcp
+```
+
+To pull the latest SDK later:
+
+```bash
+git submodule update --remote --merge
+uv sync
 ```
 
 ### Docker
@@ -306,6 +310,24 @@ watchtowr-mcp/
 ├── pyproject.toml
 ├── Dockerfile
 └── README.md
+```
+
+### Tests
+
+A two-layer test suite lives under `test/` — see `test/README.md` for details.
+
+- **Unit tests** (offline, no credentials): verify every SDK method the server imports actually exists, that `README.md` stays in sync with the `@mcp.tool()` registry, and that `sdk_compat` patches apply cleanly.
+- **Integration tests** (live tenant): one test per tool across all 88 tools. Auto-skipped when `WATCHTOWR_API_KEY` / `WATCHTOWR_PLATFORM_HOST` are absent. Mutating tools are gated behind a separate `--run-writes` flag.
+
+```bash
+# Offline checks
+uv run pytest test/unit
+
+# Full read-only sweep against a tenant
+WATCHTOWR_API_KEY=... WATCHTOWR_PLATFORM_HOST=... uv run pytest test/integration -m live
+
+# Include status flips, retests, seed asset submission
+WATCHTOWR_API_KEY=... WATCHTOWR_PLATFORM_HOST=... uv run pytest test/integration -m live --run-writes
 ```
 
 ## Support

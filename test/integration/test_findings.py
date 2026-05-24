@@ -1,0 +1,67 @@
+"""Live-API tests for the 10 Findings tools."""
+from __future__ import annotations
+
+import pytest
+
+from ._helpers import assert_ok
+
+
+pytestmark = pytest.mark.live
+
+
+def test_list_cisa_kev_findings(live_env, call):
+    assert_ok(call("list_cisa_kev_findings", page_size=5), allow_empty=True)
+
+
+@pytest.mark.parametrize("severity", ["Critical", "High", "Medium", "Low"])
+def test_list_findings_by_severity(live_env, call, severity):
+    assert_ok(call("list_findings_by_severity", severity=severity, page_size=5), allow_empty=True)
+
+
+def test_get_finding_details(live_env, call, sample_finding_id):
+    assert_ok(call("get_finding_details", finding_id=sample_finding_id))
+
+
+def test_search_findings(live_env, call):
+    assert_ok(call("search_findings", page_size=5), allow_empty=True)
+
+
+def test_get_finding_statuses(live_env, call):
+    assert_ok(call("get_finding_statuses"))
+
+
+def test_get_findings_summary_by_severity(live_env, call):
+    assert_ok(call("get_findings_summary_by_severity"))
+
+
+def test_get_unresolved_findings_by_business_unit(live_env, call, sample_bu_id):
+    assert_ok(call("get_unresolved_findings_by_business_unit", business_unit_id=str(sample_bu_id)), allow_empty=True)
+
+
+def test_export_finding_pdf(live_env, call, sample_finding_id):
+    assert_ok(call("export_finding_pdf", finding_id=sample_finding_id))
+
+
+@pytest.mark.write
+def test_update_finding_status_roundtrip(live_env, call, sample_finding_id):
+    """Read current status → set to the same value → assert no error.
+
+    We deliberately set the status to whatever it already is. That exercises
+    the write path without mutating tenant state.
+    """
+    details = call("get_finding_details", finding_id=sample_finding_id)
+    assert not details.startswith("Error")
+    # The detail string includes "Status: <value>" — pull it out.
+    status = None
+    for line in details.splitlines():
+        if line.lower().startswith("status:"):
+            status = line.split(":", 1)[1].strip()
+            break
+    if not status:
+        pytest.skip("could not parse status from finding details")
+    assert_ok(call("update_finding_status", finding_id=sample_finding_id, status=status))
+
+
+@pytest.mark.write
+def test_retest_finding(live_env, call, sample_finding_id):
+    assert_ok(call("retest_finding", finding_id=sample_finding_id))
