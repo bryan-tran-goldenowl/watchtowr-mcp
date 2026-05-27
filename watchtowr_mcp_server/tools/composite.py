@@ -1,37 +1,37 @@
 from datetime import datetime, timedelta
 
-from watchtowr_api.api.findings_api import FindingsApi
-from watchtowr_api.api.hunts_api import HuntsApi
-from watchtowr_api.api.business_unit_api import BusinessUnitApi
-from watchtowr_api.api.certificates_api import CertificatesApi
-from watchtowr_api.api.service_listing_api import ServiceListingApi
-from watchtowr_api.api.asset_ip_addresses_api import AssetIPAddressesApi
-from watchtowr_api.api.asset_domains_api import AssetDomainsApi
-from watchtowr_api.api.asset_subdomains_api import AssetSubdomainsApi
-from watchtowr_api.api.asset_ports_api import AssetPortsApi
-from watchtowr_api.api.asset_ip_ranges_api import AssetIPRangesApi
-from watchtowr_api.api.asset_cloud_storage_assets_api import AssetCloudStorageAssetsApi
-from watchtowr_api.api.asset_source_code_repositories_api import AssetSourceCodeRepositoriesApi
-from watchtowr_api.api.asset_containers_api import AssetContainersApi
-from watchtowr_api.api.asset_saa_s_platforms_api import AssetSaaSPlatformsApi
-from watchtowr_api.api.asset_mobile_applications_api import AssetMobileApplicationsApi
-from watchtowr_api.api.points_of_interest_api import PointsOfInterestApi
+from watchtowr_api_sdk.api.findings_api import FindingsApi
+from watchtowr_api_sdk.api.hunts_api import HuntsApi
+from watchtowr_api_sdk.api.business_unit_api import BusinessUnitApi
+from watchtowr_api_sdk.api.certificates_api import CertificatesApi
+from watchtowr_api_sdk.api.service_discovery_api import ServiceDiscoveryApi
+from watchtowr_api_sdk.api.ip_addresses_api import IPAddressesApi
+from watchtowr_api_sdk.api.domains_api import DomainsApi
+from watchtowr_api_sdk.api.subdomains_api import SubdomainsApi
+from watchtowr_api_sdk.api.ports_api import PortsApi
+from watchtowr_api_sdk.api.ip_ranges_api import IPRangesApi
+from watchtowr_api_sdk.api.cloud_storage_api import CloudStorageApi
+from watchtowr_api_sdk.api.repositories_api import RepositoriesApi
+from watchtowr_api_sdk.api.containers_api import ContainersApi
+from watchtowr_api_sdk.api.saa_s_platforms_api import SaaSPlatformsApi
+from watchtowr_api_sdk.api.mobile_applications_api import MobileApplicationsApi
+from watchtowr_api_sdk.api.points_of_interest_api import PointsOfInterestApi
 
 from ..client import get_api_client, get_total, parse_date, format_bus, severity_display
 from ..constants import SUMMARY_SEVERITIES
 
 
 _ASSET_API_MAP = [
-    ("IP Addresses", AssetIPAddressesApi, "get_list_asset_ips"),
-    ("Domains", AssetDomainsApi, "get_list_asset_domains"),
-    ("Subdomains", AssetSubdomainsApi, "get_list_asset_subdomains"),
-    ("Ports", AssetPortsApi, "get_list_asset_ports"),
-    ("IP Ranges", AssetIPRangesApi, "get_list_asset_ipranges"),
-    ("Cloud Storage", AssetCloudStorageAssetsApi, "get_list_asset_cloud_storages"),
-    ("Repositories", AssetSourceCodeRepositoriesApi, "get_list_asset_repositories"),
-    ("Containers", AssetContainersApi, "get_list_asset_container"),
-    ("SaaS Platforms", AssetSaaSPlatformsApi, "get_list_asset_saas_platforms"),
-    ("Mobile Apps", AssetMobileApplicationsApi, "get_list_asset_mobile_apps"),
+    ("IP Addresses", IPAddressesApi, "get_list_asset_ips"),
+    ("Domains", DomainsApi, "get_list_asset_domains"),
+    ("Subdomains", SubdomainsApi, "get_list_asset_subdomains"),
+    ("Ports", PortsApi, "get_list_asset_ports"),
+    ("IP Ranges", IPRangesApi, "get_list_asset_ipranges"),
+    ("Cloud Storage", CloudStorageApi, "get_list_asset_cloud_storages"),
+    ("Repositories", RepositoriesApi, "get_list_asset_repositories"),
+    ("Containers", ContainersApi, "get_list_asset_container"),
+    ("SaaS Platforms", SaaSPlatformsApi, "get_list_asset_saas_platforms"),
+    ("Mobile Apps", MobileApplicationsApi, "get_list_asset_mobile_apps"),
 ]
 
 
@@ -222,7 +222,7 @@ def register_composite_tools(mcp):
                         findings_api, "get_list_findings",
                         severities=severity,
                         business_unit_ids=business_unit_id,
-                        statuses="Open,Triaged,In Progress",
+                        statuses="confirmed,unconfirmed",
                     )
                     total_findings += count
                     lines.append(f"  • {severity_display(severity)}: {count}")
@@ -250,7 +250,7 @@ def register_composite_tools(mcp):
 
             # Services
             try:
-                svc_api = ServiceListingApi(client)
+                svc_api = ServiceDiscoveryApi(client)
                 svc_count = _count(
                     svc_api, "get_list_service_listing",
                     business_unit_ids=business_unit_id,
@@ -298,7 +298,7 @@ def register_composite_tools(mcp):
         try:
             client = get_api_client()
             findings_api = FindingsApi(client)
-            response = findings_api.get_finding_details(id=finding_id, api_token="")
+            response = findings_api.get_finding_details(id=finding_id)
 
             f = response.data if hasattr(response, 'data') else response
             if not f:
@@ -364,11 +364,11 @@ def register_composite_tools(mcp):
         try:
             client = get_api_client()
             cert_api = CertificatesApi(client)
-            svc_api = ServiceListingApi(client)
+            svc_api = ServiceDiscoveryApi(client)
 
             expiry_cutoff = datetime.now() + timedelta(days=days)
             cert_response = cert_api.get_list_certificates(
-                valid_to_before=expiry_cutoff,
+                not_after_to=expiry_cutoff,
                 page_size=30,
             )
 
@@ -477,7 +477,7 @@ def register_composite_tools(mcp):
 
                 # Attempt to get full detail with remediation
                 try:
-                    detail_resp = findings_api.get_finding_details(id=fid, api_token="")
+                    detail_resp = findings_api.get_finding_details(id=fid)
                     fd = detail_resp.data if hasattr(detail_resp, 'data') else detail_resp
                     if fd:
                         remediation = getattr(fd, 'remediation', '')
@@ -622,7 +622,7 @@ def register_composite_tools(mcp):
             cutoff = datetime.now() - timedelta(days=days)
 
             resp = findings_api.get_list_findings(
-                statuses="Open,Triaged,In Progress",
+                statuses="confirmed,unconfirmed",
                 created_to=cutoff,
                 page_size=min(page_size, 30),
             )
@@ -663,7 +663,7 @@ def register_composite_tools(mcp):
             for severity in SUMMARY_SEVERITIES[:2]:  # critical, high
                 resp = findings_api.get_list_findings(
                     severities=severity,
-                    statuses="Open,Triaged,In Progress",
+                    statuses="confirmed,unconfirmed",
                     assignee="No Assignee",
                     page_size=min(page_size, 30),
                 )
@@ -703,7 +703,7 @@ def register_composite_tools(mcp):
                     count = _count(
                         findings_api, "get_list_findings",
                         asset_types=at,
-                        statuses="Open,Triaged,In Progress",
+                        statuses="confirmed,unconfirmed",
                     )
                     total += count
                     if count > 0:
@@ -769,17 +769,17 @@ def _fetch_asset_detail(client, asset_type: str, asset_id) -> list[str]:
     lines = []
 
     dispatch = {
-        "ip": (AssetIPAddressesApi, "get_asset_ip_details", ["name", "status", "country", "live", "source"]),
-        "ip_address": (AssetIPAddressesApi, "get_asset_ip_details", ["name", "status", "country", "live", "source"]),
-        "domain": (AssetDomainsApi, "get_asset_domain_details", ["name", "status", "live", "source"]),
-        "subdomain": (AssetSubdomainsApi, "get_asset_subdomain_details", ["name", "status", "live", "source"]),
-        "port": (AssetPortsApi, "get_asset_port_details", ["ip", "port", "service", "banner", "status"]),
-        "ip_range": (AssetIPRangesApi, "get_asset_iprange_details", ["iprange", "asn", "desc", "country", "status"]),
-        "cloud_storage": (AssetCloudStorageAssetsApi, "get_asset_cloud_storage_details", ["name", "platform", "url", "status"]),
-        "repository": (AssetSourceCodeRepositoriesApi, "get_asset_repository_details", ["name", "owner", "provider", "status"]),
-        "container": (AssetContainersApi, "get_asset_container_details", ["name", "owner", "platform", "url", "status"]),
-        "saas_platform": (AssetSaaSPlatformsApi, "get_asset_saas_platform_details", ["url", "provider", "status"]),
-        "mobile_app": (AssetMobileApplicationsApi, "get_asset_mobile_app_details", ["name", "publisher", "platform", "url", "status"]),
+        "ip": (IPAddressesApi, "get_asset_ip_details", ["name", "status", "country", "live", "source"]),
+        "ip_address": (IPAddressesApi, "get_asset_ip_details", ["name", "status", "country", "live", "source"]),
+        "domain": (DomainsApi, "get_asset_domain_details", ["name", "status", "live", "source"]),
+        "subdomain": (SubdomainsApi, "get_asset_subdomain_details", ["name", "status", "live", "source"]),
+        "port": (PortsApi, "get_asset_port_details", ["ip", "port", "service", "banner", "status"]),
+        "ip_range": (IPRangesApi, "get_asset_iprange_details", ["iprange", "asn", "desc", "country", "status"]),
+        "cloud_storage": (CloudStorageApi, "get_asset_cloud_storage_details", ["name", "platform", "url", "status"]),
+        "repository": (RepositoriesApi, "get_asset_repository_details", ["name", "owner", "provider", "status"]),
+        "container": (ContainersApi, "get_asset_container_details", ["name", "owner", "platform", "url", "status"]),
+        "saas_platform": (SaaSPlatformsApi, "get_asset_saas_platform_details", ["url", "provider", "status"]),
+        "mobile_app": (MobileApplicationsApi, "get_asset_mobile_app_details", ["name", "publisher", "platform", "url", "status"]),
     }
 
     if type_lower not in dispatch:
@@ -789,7 +789,7 @@ def _fetch_asset_detail(client, asset_type: str, asset_id) -> list[str]:
     api = api_cls(client)
     method = getattr(api, method_name)
 
-    kwargs = {"id": int(asset_id), "api_token": ""}
+    kwargs = {"id": int(asset_id)}
     response = method(**kwargs)
     data = response.data if hasattr(response, 'data') else response
 

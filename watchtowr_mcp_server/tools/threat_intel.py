@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 
-from watchtowr_api.api.suspicious_domains_api import SuspiciousDomainsApi
-from watchtowr_api.api.points_of_interest_api import PointsOfInterestApi
-from watchtowr_api.api.certificates_api import CertificatesApi
+from watchtowr_api_sdk.api.suspicious_domains_api import SuspiciousDomainsApi
+from watchtowr_api_sdk.api.points_of_interest_api import PointsOfInterestApi
+from watchtowr_api_sdk.api.certificates_api import CertificatesApi
 
 from ..client import get_api_client, get_total, parse_date, format_bus
 

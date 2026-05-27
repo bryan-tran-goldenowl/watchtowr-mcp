@@ -1,9 +1,9 @@
-from watchtowr_api.api.findings_api import FindingsApi
-from watchtowr_api.api.service_listing_api import ServiceListingApi
-from watchtowr_api.api.asset_ip_addresses_api import AssetIPAddressesApi
-from watchtowr_api.api.asset_domains_api import AssetDomainsApi
-from watchtowr_api.api.asset_subdomains_api import AssetSubdomainsApi
-from watchtowr_api.api.asset_ports_api import AssetPortsApi
+from watchtowr_api_sdk.api.findings_api import FindingsApi
+from watchtowr_api_sdk.api.service_discovery_api import ServiceDiscoveryApi
+from watchtowr_api_sdk.api.ip_addresses_api import IPAddressesApi
+from watchtowr_api_sdk.api.domains_api import DomainsApi
+from watchtowr_api_sdk.api.subdomains_api import SubdomainsApi
+from watchtowr_api_sdk.api.ports_api import PortsApi
 
 from ..client import get_api_client, get_total
 
@@ -28,21 +28,11 @@ def register_incident_tools(mcp):
             client = get_api_client()
             lines = [f"Assets in Country: {country_code.upper()}", ""]
 
-            ip_api = AssetIPAddressesApi(client)
-            ip_resp = ip_api.get_list_asset_ips(countries=country_code.upper(), page_size=min(page_size, 30))
-            ip_total = get_total(ip_resp) or (len(ip_resp.data) if hasattr(ip_resp, 'data') and ip_resp.data else 0)
+            ip_total = 0
+            lines.append("Note: Direct IP search by country is not supported by the API. Showing services.")
+            lines.append("")
 
-            if hasattr(ip_resp, 'data') and ip_resp.data:
-                lines.append(f"IP Addresses ({ip_total}):")
-                for a in ip_resp.data:
-                    name = getattr(a, 'name', 'Unknown')
-                    status = getattr(a, 'status', '')
-                    lines.append(f"  • {name} ({status})")
-                if ip_total > len(ip_resp.data):
-                    lines.append(f"  ... and {ip_total - len(ip_resp.data)} more")
-                lines.append("")
-
-            svc_api = ServiceListingApi(client)
+            svc_api = ServiceDiscoveryApi(client)
             svc_resp = svc_api.get_list_service_listing(countries=country_code.upper(), page_size=min(page_size, 30))
             svc_total = get_total(svc_resp) or (len(svc_resp.data) if hasattr(svc_resp, 'data') and svc_resp.data else 0)
 
@@ -69,7 +59,7 @@ def register_incident_tools(mcp):
         """Aggregate view of exposed services grouped by service type with counts."""
         try:
             client = get_api_client()
-            svc_api = ServiceListingApi(client)
+            svc_api = ServiceDiscoveryApi(client)
 
             resp = svc_api.get_list_service_listing(page_size=30)
             total = get_total(resp)
@@ -102,7 +92,7 @@ def register_incident_tools(mcp):
         """
         try:
             client = get_api_client()
-            svc_api = ServiceListingApi(client)
+            svc_api = ServiceDiscoveryApi(client)
 
             resp = svc_api.get_list_service_listing(search=technology_search, page_size=min(page_size, 30))
             total = get_total(resp)
@@ -185,8 +175,8 @@ def register_incident_tools(mcp):
 
             if asset_type_lower in ("domain",):
                 try:
-                    domain_api = AssetDomainsApi(client)
-                    domain_resp = domain_api.get_asset_domain_details(id=asset_id, api_token="")
+                    domain_api = DomainsApi(client)
+                    domain_resp = domain_api.get_asset_domain_details(id=asset_id)
                     domain = domain_resp.data if hasattr(domain_resp, 'data') else domain_resp
                     domain_name = getattr(domain, 'name', '') if domain else ''
 
@@ -194,7 +184,7 @@ def register_incident_tools(mcp):
                         lines.append(f"Domain: {domain_name}")
                         lines.append("")
 
-                        sub_api = AssetSubdomainsApi(client)
+                        sub_api = SubdomainsApi(client)
                         sub_resp = sub_api.get_list_asset_subdomains(asset_name=domain_name, page_size=30)
                         sub_total = get_total(sub_resp) or (len(sub_resp.data) if hasattr(sub_resp, 'data') and sub_resp.data else 0)
                         if hasattr(sub_resp, 'data') and sub_resp.data:
@@ -208,8 +198,8 @@ def register_incident_tools(mcp):
 
             elif asset_type_lower in ("ip", "ip_address"):
                 try:
-                    ip_api = AssetIPAddressesApi(client)
-                    ip_resp = ip_api.get_asset_ip_details(id=asset_id, api_token="")
+                    ip_api = IPAddressesApi(client)
+                    ip_resp = ip_api.get_asset_ip_details(id=asset_id)
                     ip = ip_resp.data if hasattr(ip_resp, 'data') else ip_resp
                     ip_name = getattr(ip, 'name', '') if ip else ''
 
@@ -230,7 +220,7 @@ def register_incident_tools(mcp):
                                 lines.append(f"  ... and {port_total - 15} more")
                         lines.append("")
 
-                    svc_api = ServiceListingApi(client)
+                    svc_api = ServiceDiscoveryApi(client)
                     svc_resp = svc_api.get_list_service_listing(search=ip_name, page_size=10)
                     if hasattr(svc_resp, 'data') and svc_resp.data:
                         lines.append(f"Services on {ip_name}:")
@@ -257,8 +247,8 @@ def register_incident_tools(mcp):
 
             elif asset_type_lower in ("subdomain",):
                 try:
-                    sub_api = AssetSubdomainsApi(client)
-                    sub_resp = sub_api.get_asset_subdomain_details(id=asset_id, api_token="")
+                    sub_api = SubdomainsApi(client)
+                    sub_resp = sub_api.get_asset_subdomain_details(id=asset_id)
                     sub = sub_resp.data if hasattr(sub_resp, 'data') else sub_resp
                     sub_name = getattr(sub, 'name', '') if sub else ''
 
@@ -277,7 +267,7 @@ def register_incident_tools(mcp):
                                 title = getattr(f, 'title', 'No title')
                                 lines.append(f"  • [ID:{fid}] [{sev}] {title}")
 
-                        svc_api = ServiceListingApi(client)
+                        svc_api = ServiceDiscoveryApi(client)
                         svc_resp = svc_api.get_list_service_listing(search=sub_name, page_size=10)
                         if hasattr(svc_resp, 'data') and svc_resp.data:
                             lines.append(f"\nServices:")

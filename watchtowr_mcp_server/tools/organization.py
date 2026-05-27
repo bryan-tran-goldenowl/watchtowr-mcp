@@ -1,8 +1,8 @@
 import json
 
-from watchtowr_api.api.source_ip_addresses_api import SourceIPAddressesApi
-from watchtowr_api.api.activity_log_api import ActivityLogApi
-from watchtowr_api.api.business_unit_api import BusinessUnitApi
+from watchtowr_api_sdk.api.source_ip_addresses_api import SourceIPAddressesApi
+from watchtowr_api_sdk.api.activity_log_api import ActivityLogApi
+from watchtowr_api_sdk.api.business_unit_api import BusinessUnitApi
 
 from ..client import get_api_client, get_total, parse_date
 

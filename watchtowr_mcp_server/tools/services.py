@@ -1,4 +1,4 @@
-from watchtowr_api.api.service_listing_api import ServiceListingApi
+from watchtowr_api_sdk.api.service_discovery_api import ServiceDiscoveryApi
 
 from ..client import get_api_client, get_total, parse_date, format_bus
 
@@ -33,7 +33,7 @@ def register_service_tools(mcp):
             page_size: Results per page (max 30).
         """
         try:
-            api = ServiceListingApi(get_api_client())
+            api = ServiceDiscoveryApi(get_api_client())
             kwargs = {"page": page, "page_size": min(page_size, 30)}
             if search:
                 kwargs["search"] = search
@@ -105,7 +105,7 @@ def register_service_tools(mcp):
             page_size: Results per page (max 30).
         """
         try:
-            api = ServiceListingApi(get_api_client())
+            api = ServiceDiscoveryApi(get_api_client())
             kwargs = {"page": page, "page_size": min(page_size, 30)}
             if technology_ids:
                 kwargs["technology_ids"] = technology_ids

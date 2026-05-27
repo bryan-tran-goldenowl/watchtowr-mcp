@@ -1,34 +1,34 @@
 from datetime import datetime, timedelta
 
-from watchtowr_api.api.findings_api import FindingsApi
-from watchtowr_api.api.business_unit_api import BusinessUnitApi
-from watchtowr_api.api.certificates_api import CertificatesApi
-from watchtowr_api.api.service_listing_api import ServiceListingApi
-from watchtowr_api.api.asset_ip_addresses_api import AssetIPAddressesApi
-from watchtowr_api.api.asset_domains_api import AssetDomainsApi
-from watchtowr_api.api.asset_subdomains_api import AssetSubdomainsApi
-from watchtowr_api.api.asset_ports_api import AssetPortsApi
-from watchtowr_api.api.asset_ip_ranges_api import AssetIPRangesApi
-from watchtowr_api.api.asset_cloud_storage_assets_api import AssetCloudStorageAssetsApi
-from watchtowr_api.api.asset_source_code_repositories_api import AssetSourceCodeRepositoriesApi
-from watchtowr_api.api.asset_containers_api import AssetContainersApi
-from watchtowr_api.api.asset_saa_s_platforms_api import AssetSaaSPlatformsApi
-from watchtowr_api.api.asset_mobile_applications_api import AssetMobileApplicationsApi
+from watchtowr_api_sdk.api.findings_api import FindingsApi
+from watchtowr_api_sdk.api.business_unit_api import BusinessUnitApi
+from watchtowr_api_sdk.api.certificates_api import CertificatesApi
+from watchtowr_api_sdk.api.service_discovery_api import ServiceDiscoveryApi
+from watchtowr_api_sdk.api.ip_addresses_api import IPAddressesApi
+from watchtowr_api_sdk.api.domains_api import DomainsApi
+from watchtowr_api_sdk.api.subdomains_api import SubdomainsApi
+from watchtowr_api_sdk.api.ports_api import PortsApi
+from watchtowr_api_sdk.api.ip_ranges_api import IPRangesApi
+from watchtowr_api_sdk.api.cloud_storage_api import CloudStorageApi
+from watchtowr_api_sdk.api.repositories_api import RepositoriesApi
+from watchtowr_api_sdk.api.containers_api import ContainersApi
+from watchtowr_api_sdk.api.saa_s_platforms_api import SaaSPlatformsApi
+from watchtowr_api_sdk.api.mobile_applications_api import MobileApplicationsApi
 
 from ..client import get_api_client, get_total, parse_date, severity_display
 from ..constants import SUMMARY_SEVERITIES
 
 _ASSET_API_MAP = [
-    ("IP Addresses", AssetIPAddressesApi, "get_list_asset_ips"),
-    ("Domains", AssetDomainsApi, "get_list_asset_domains"),
-    ("Subdomains", AssetSubdomainsApi, "get_list_asset_subdomains"),
-    ("Ports", AssetPortsApi, "get_list_asset_ports"),
-    ("IP Ranges", AssetIPRangesApi, "get_list_asset_ipranges"),
-    ("Cloud Storage", AssetCloudStorageAssetsApi, "get_list_asset_cloud_storages"),
-    ("Repositories", AssetSourceCodeRepositoriesApi, "get_list_asset_repositories"),
-    ("Containers", AssetContainersApi, "get_list_asset_container"),
-    ("SaaS Platforms", AssetSaaSPlatformsApi, "get_list_asset_saas_platforms"),
-    ("Mobile Apps", AssetMobileApplicationsApi, "get_list_asset_mobile_apps"),
+    ("IP Addresses", IPAddressesApi, "get_list_asset_ips"),
+    ("Domains", DomainsApi, "get_list_asset_domains"),
+    ("Subdomains", SubdomainsApi, "get_list_asset_subdomains"),
+    ("Ports", PortsApi, "get_list_asset_ports"),
+    ("IP Ranges", IPRangesApi, "get_list_asset_ipranges"),
+    ("Cloud Storage", CloudStorageApi, "get_list_asset_cloud_storages"),
+    ("Repositories", RepositoriesApi, "get_list_asset_repositories"),
+    ("Containers", ContainersApi, "get_list_asset_container"),
+    ("SaaS Platforms", SaaSPlatformsApi, "get_list_asset_saas_platforms"),
+    ("Mobile Apps", MobileApplicationsApi, "get_list_asset_mobile_apps"),
 ]
 
 
@@ -178,7 +178,7 @@ def register_reporting_tools(mcp):
             lines = ["Finding Age Distribution (Open/Unresolved):", ""]
 
             for label, created_from, created_to in buckets:
-                kwargs = {"statuses": "Open,Triaged,In Progress", "page_size": 1}
+                kwargs = {"statuses": "confirmed,unconfirmed", "page_size": 1}
                 if created_from and not created_to:
                     kwargs["created_from"] = created_from
                 elif created_to and not created_from:
@@ -264,7 +264,7 @@ def register_reporting_tools(mcp):
         """
         try:
             client = get_api_client()
-            svc_api = ServiceListingApi(client)
+            svc_api = ServiceDiscoveryApi(client)
 
             resp = svc_api.get_list_service_listing(page_size=min(page_size, 30))
             total = get_total(resp)
@@ -316,7 +316,7 @@ def register_reporting_tools(mcp):
                     total_findings = _count(
                         findings_api, "get_list_findings",
                         asset_types=at,
-                        statuses="Open,Triaged,In Progress",
+                        statuses="confirmed,unconfirmed",
                     )
 
                     matching_asset_api = None
@@ -411,7 +411,7 @@ def register_reporting_tools(mcp):
             total_findings = 0
             for sev in SUMMARY_SEVERITIES:
                 try:
-                    c = _count(findings_api, "get_list_findings", severities=sev, statuses="Open,Triaged,In Progress")
+                    c = _count(findings_api, "get_list_findings", severities=sev, statuses="confirmed,unconfirmed")
                     total_findings += c
                     lines.append(f"  • {severity_display(sev)}: {c}")
                 except Exception:
@@ -419,13 +419,13 @@ def register_reporting_tools(mcp):
             lines.append(f"  Total Open: {total_findings}")
 
             try:
-                kev = _count(findings_api, "get_list_findings", tags="CISA-KEV", statuses="Open,Triaged,In Progress")
+                kev = _count(findings_api, "get_list_findings", tags="CISA-KEV", statuses="confirmed,unconfirmed")
                 lines.append(f"\nCISA-KEV (Open): {kev}")
             except Exception:
                 pass
 
             try:
-                resp = findings_api.get_list_findings(statuses="Open,Triaged,In Progress", page_size=30)
+                resp = findings_api.get_list_findings(statuses="confirmed,unconfirmed", page_size=30)
                 if hasattr(resp, 'data') and resp.data:
                     ages = []
                     for f in resp.data:
@@ -509,7 +509,7 @@ def register_reporting_tools(mcp):
             findings_api = FindingsApi(client)
 
             resp = findings_api.get_list_findings(
-                statuses="Open,Triaged,In Progress",
+                statuses="confirmed,unconfirmed",
                 page_size=min(page_size, 30),
             )
 

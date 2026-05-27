@@ -1,4 +1,4 @@
-from watchtowr_api.api.hunts_api import HuntsApi
+from watchtowr_api_sdk.api.hunts_api import HuntsApi
 
 from ..client import get_api_client, get_total, parse_date, severity_display
 

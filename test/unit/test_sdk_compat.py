@@ -44,7 +44,7 @@ def test_retest_dto_rejects_unknown_status():
 
 def test_patched_link_accepts_null_previous_and_next():
     """First/last page responses set Link.previous / Link.next to null."""
-    from watchtowr_api.models.link import Link
+    from watchtowr_api_sdk.models.link import Link
     link = Link.from_dict({"first": "?page=1", "last": "?page=5", "previous": None, "next": None})
     assert link is not None
     assert link.previous is None
@@ -54,7 +54,7 @@ def test_patched_link_accepts_null_previous_and_next():
 def test_client_finding_from_dict_handles_minimal_payload():
     """The patched ClientFinding.from_dict uses model_construct and should
     accept a payload with just an id, mirroring what some endpoints return."""
-    from watchtowr_api.models.client_finding import ClientFinding
+    from watchtowr_api_sdk.models.client_finding import ClientFinding
     finding = ClientFinding.from_dict({"id": 1234})
     assert finding is not None
     assert finding.id == 1234

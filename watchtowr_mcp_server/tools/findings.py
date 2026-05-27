@@ -1,5 +1,5 @@
-from watchtowr_api.api.findings_api import FindingsApi
-from watchtowr_api.models.update_client_finding_status_request_body import UpdateClientFindingStatusRequestBody
+from watchtowr_api_sdk.api.findings_api import FindingsApi
+from watchtowr_api_sdk.models.update_client_finding_status_request_body import UpdateClientFindingStatusRequestBody
 
 from ..client import get_api_client, get_total, normalize_severities, parse_date, severity_display
 from ..constants import SUMMARY_SEVERITIES
@@ -81,7 +81,7 @@ def register_findings_tools(mcp):
         """
         try:
             api = FindingsApi(get_api_client())
-            response = api.get_finding_details(id=finding_id, api_token="")
+            response = api.get_finding_details(id=finding_id)
 
             finding = response.data if hasattr(response, 'data') else response
             if not finding:
@@ -232,7 +232,7 @@ def register_findings_tools(mcp):
             body = UpdateClientFindingStatusRequestBody(status=status)
             response = api.update_finding_status(
                 id=finding_id,
-                api_token="",
+                
                 update_client_finding_status_request_body=body,
             )
 
@@ -263,32 +263,16 @@ def register_findings_tools(mcp):
     def get_finding_statuses() -> str:
         """List all available finding status values."""
         try:
-            import json
             api = FindingsApi(get_api_client())
-            _data, status_code, headers = api.get_available_finding_statuses_with_http_info()
-
-            response_data = headers.get("Content-Type", "")
-            if hasattr(_data, 'read'):
-                body = _data.read()
-            elif isinstance(_data, (str, bytes)):
-                body = _data
-            else:
-                body = str(_data)
-
-            if isinstance(body, bytes):
-                body = body.decode("utf-8")
-
-            try:
-                parsed = json.loads(body)
-                if isinstance(parsed, list):
-                    return "Available Finding Statuses:\n" + "\n".join(f"• {s}" for s in parsed)
-                if isinstance(parsed, dict) and "data" in parsed:
-                    statuses = parsed["data"]
-                    if isinstance(statuses, list):
-                        return "Available Finding Statuses:\n" + "\n".join(f"• {s}" for s in statuses)
-                return f"Available Finding Statuses: {parsed}"
-            except (json.JSONDecodeError, TypeError):
-                return f"Available Finding Statuses: {body}"
+            response = api.get_available_finding_statuses()
+            statuses = getattr(response, "data", [])
+            
+            if statuses and isinstance(statuses, list):
+                # Handle nested list [["confirmed", ...]]
+                status_list = statuses[0] if isinstance(statuses[0], list) else statuses
+                return "Available Finding Statuses:\n" + "\n".join(f"• {s}" for s in status_list)
+            
+            return f"Available Finding Statuses: {statuses}"
         except Exception as e:
             return f"Error retrieving finding statuses: {e}"
 
@@ -330,7 +314,7 @@ def register_findings_tools(mcp):
             api = FindingsApi(get_api_client())
             kwargs = {
                 "business_unit_ids": business_unit_id,
-                "statuses": "Open,Triaged,In Progress",
+                "statuses": "confirmed,unconfirmed",
                 "page_size": min(page_size, 30),
             }
             if severities:
@@ -367,7 +351,7 @@ def register_findings_tools(mcp):
         """
         try:
             api = FindingsApi(get_api_client())
-            api.export_pdf_for_finding(id=finding_id, api_token="")
+            api.export_pdf_for_finding(id=finding_id)
             return f"PDF export initiated for finding {finding_id}. Check the watchTowr Platform for the download."
         except Exception as e:
             return f"Error exporting finding PDF: {e}"

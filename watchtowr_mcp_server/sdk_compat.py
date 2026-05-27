@@ -76,13 +76,13 @@ class FindingRetestResponseDtoCompat(BaseModel):
 
 
 def apply_watchtowr_sdk_compat_patches() -> None:
-    import watchtowr_api.models.finding_retest_response_dto as dto_mod
-    import watchtowr_api.models.client_finding as cf_mod
-    import watchtowr_api.models.paginated_client_findings as pcf_mod
-    import watchtowr_api.models.retest as retest_mod
-    import watchtowr_api.models.link as link_mod
-    from watchtowr_api.models.client_finding_assignee import ClientFindingAssignee
-    from watchtowr_api.models.client_finding_impact_tag import ClientFindingImpactTag
+    import watchtowr_api_sdk.models.finding_retest_response_dto as dto_mod
+    import watchtowr_api_sdk.models.client_finding as cf_mod
+    import watchtowr_api_sdk.models.paginated_client_findings as pcf_mod
+    import watchtowr_api_sdk.models.retest as retest_mod
+    import watchtowr_api_sdk.models.link as link_mod
+    from watchtowr_api_sdk.models.client_finding_assignee import ClientFindingAssignee
+    from watchtowr_api_sdk.models.client_finding_impact_tag import ClientFindingImpactTag
 
     # Patch Link: previous/next are null on the first/last page respectively.
     def link_from_dict(cls, obj: Optional[Dict[str, Any]]) -> Any:
@@ -167,6 +167,6 @@ def apply_watchtowr_sdk_compat_patches() -> None:
     cf_mod.ClientFinding.model_rebuild(force=True)
     pcf_mod.PaginatedClientFindings.model_rebuild(force=True)
 
-    import watchtowr_api.models as models_pkg
+    import watchtowr_api_sdk.models as models_pkg
 
     models_pkg.FindingRetestResponseDto = dto_mod.FindingRetestResponseDto

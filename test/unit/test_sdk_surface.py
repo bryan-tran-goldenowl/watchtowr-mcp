@@ -28,92 +28,92 @@ MCP_SOURCE_DIRS = [
 
 SDK_CALLS = [
     # Findings
-    ("watchtowr_api.api.findings_api", "FindingsApi", "get_list_findings"),
-    ("watchtowr_api.api.findings_api", "FindingsApi", "get_finding_details"),
-    ("watchtowr_api.api.findings_api", "FindingsApi", "update_finding_status"),
-    ("watchtowr_api.api.findings_api", "FindingsApi", "start_specific_finding_retest"),
-    ("watchtowr_api.api.findings_api", "FindingsApi", "get_available_finding_statuses_with_http_info"),
-    ("watchtowr_api.api.findings_api", "FindingsApi", "export_pdf_for_finding"),
+    ("watchtowr_api_sdk.api.findings_api", "FindingsApi", "get_list_findings"),
+    ("watchtowr_api_sdk.api.findings_api", "FindingsApi", "get_finding_details"),
+    ("watchtowr_api_sdk.api.findings_api", "FindingsApi", "update_finding_status"),
+    ("watchtowr_api_sdk.api.findings_api", "FindingsApi", "start_specific_finding_retest"),
+    ("watchtowr_api_sdk.api.findings_api", "FindingsApi", "get_available_finding_statuses_with_http_info"),
+    ("watchtowr_api_sdk.api.findings_api", "FindingsApi", "export_pdf_for_finding"),
     # Hunts
-    ("watchtowr_api.api.hunts_api", "HuntsApi", "get_client_hunts"),
-    ("watchtowr_api.api.hunts_api", "HuntsApi", "show_the_detail_hunt"),
-    ("watchtowr_api.api.hunts_api", "HuntsApi", "get_list_finding_by_hunt"),
-    ("watchtowr_api.api.hunts_api", "HuntsApi", "get_list_asset_by_hunt"),
+    ("watchtowr_api_sdk.api.hunts_api", "HuntsApi", "get_client_hunts"),
+    ("watchtowr_api_sdk.api.hunts_api", "HuntsApi", "show_the_detail_hunt"),
+    ("watchtowr_api_sdk.api.hunts_api", "HuntsApi", "get_list_finding_by_hunt"),
+    ("watchtowr_api_sdk.api.hunts_api", "HuntsApi", "get_list_asset_by_hunt"),
     # Business unit
-    ("watchtowr_api.api.business_unit_api", "BusinessUnitApi", "get_list_business_unit"),
-    ("watchtowr_api.api.business_unit_api", "BusinessUnitApi", "get_business_unit_details"),
+    ("watchtowr_api_sdk.api.business_unit_api", "BusinessUnitApi", "get_list_business_unit"),
+    ("watchtowr_api_sdk.api.business_unit_api", "BusinessUnitApi", "get_business_unit_details"),
     # Activity log
-    ("watchtowr_api.api.activity_log_api", "ActivityLogApi", "get_list_activity_logs"),
+    ("watchtowr_api_sdk.api.activity_log_api", "ActivityLogApi", "get_list_activity_logs"),
     # Source IPs
-    ("watchtowr_api.api.source_ip_addresses_api", "SourceIPAddressesApi", "get_list_source_ip_addresses"),
+    ("watchtowr_api_sdk.api.source_ip_addresses_api", "SourceIPAddressesApi", "get_list_source_ip_addresses"),
     # Service listing
-    ("watchtowr_api.api.service_listing_api", "ServiceListingApi", "get_list_service_listing"),
+    ("watchtowr_api_sdk.api.service_discovery_api", "ServiceDiscoveryApi", "get_list_service_listing"),
     # Asset IPs
-    ("watchtowr_api.api.asset_ip_addresses_api", "AssetIPAddressesApi", "get_list_asset_ips"),
-    ("watchtowr_api.api.asset_ip_addresses_api", "AssetIPAddressesApi", "get_asset_ip_details"),
-    ("watchtowr_api.api.asset_ip_addresses_api", "AssetIPAddressesApi", "get_asset_ip_ports"),
-    ("watchtowr_api.api.asset_ip_addresses_api", "AssetIPAddressesApi", "get_asset_ip_port_details"),
-    ("watchtowr_api.api.asset_ip_addresses_api", "AssetIPAddressesApi", "update_asset_ip_status"),
+    ("watchtowr_api_sdk.api.ip_addresses_api", "IPAddressesApi", "get_list_asset_ips"),
+    ("watchtowr_api_sdk.api.ip_addresses_api", "IPAddressesApi", "get_asset_ip_details"),
+    ("watchtowr_api_sdk.api.ip_addresses_api", "IPAddressesApi", "get_asset_ip_ports"),
+    ("watchtowr_api_sdk.api.ip_addresses_api", "IPAddressesApi", "get_asset_ip_port_details"),
+    ("watchtowr_api_sdk.api.ip_addresses_api", "IPAddressesApi", "update_asset_ip_status"),
     # Asset domains
-    ("watchtowr_api.api.asset_domains_api", "AssetDomainsApi", "get_list_asset_domains"),
-    ("watchtowr_api.api.asset_domains_api", "AssetDomainsApi", "get_asset_domain_details"),
-    ("watchtowr_api.api.asset_domains_api", "AssetDomainsApi", "update_asset_domain_status"),
+    ("watchtowr_api_sdk.api.domains_api", "DomainsApi", "get_list_asset_domains"),
+    ("watchtowr_api_sdk.api.domains_api", "DomainsApi", "get_asset_domain_details"),
+    ("watchtowr_api_sdk.api.domains_api", "DomainsApi", "update_asset_domain_status"),
     # Asset subdomains
-    ("watchtowr_api.api.asset_subdomains_api", "AssetSubdomainsApi", "get_list_asset_subdomains"),
-    ("watchtowr_api.api.asset_subdomains_api", "AssetSubdomainsApi", "get_asset_subdomain_details"),
-    ("watchtowr_api.api.asset_subdomains_api", "AssetSubdomainsApi", "update_asset_subdomain_status"),
+    ("watchtowr_api_sdk.api.subdomains_api", "SubdomainsApi", "get_list_asset_subdomains"),
+    ("watchtowr_api_sdk.api.subdomains_api", "SubdomainsApi", "get_asset_subdomain_details"),
+    ("watchtowr_api_sdk.api.subdomains_api", "SubdomainsApi", "update_asset_subdomain_status"),
     # Asset ports
-    ("watchtowr_api.api.asset_ports_api", "AssetPortsApi", "get_list_asset_ports"),
-    ("watchtowr_api.api.asset_ports_api", "AssetPortsApi", "get_asset_port_details"),
+    ("watchtowr_api_sdk.api.ports_api", "PortsApi", "get_list_asset_ports"),
+    ("watchtowr_api_sdk.api.ports_api", "PortsApi", "get_asset_port_details"),
     # Asset IP ranges
-    ("watchtowr_api.api.asset_ip_ranges_api", "AssetIPRangesApi", "get_list_asset_ipranges"),
-    ("watchtowr_api.api.asset_ip_ranges_api", "AssetIPRangesApi", "get_asset_iprange_details"),
-    ("watchtowr_api.api.asset_ip_ranges_api", "AssetIPRangesApi", "update_asset_ip_range_status"),
+    ("watchtowr_api_sdk.api.ip_ranges_api", "IPRangesApi", "get_list_asset_ipranges"),
+    ("watchtowr_api_sdk.api.ip_ranges_api", "IPRangesApi", "get_asset_iprange_details"),
+    ("watchtowr_api_sdk.api.ip_ranges_api", "IPRangesApi", "update_asset_ip_range_status"),
     # Asset cloud storage
-    ("watchtowr_api.api.asset_cloud_storage_assets_api", "AssetCloudStorageAssetsApi", "get_list_asset_cloud_storages"),
-    ("watchtowr_api.api.asset_cloud_storage_assets_api", "AssetCloudStorageAssetsApi", "get_asset_cloud_storage_details"),
-    ("watchtowr_api.api.asset_cloud_storage_assets_api", "AssetCloudStorageAssetsApi", "update_asset_cloud_storage_status"),
+    ("watchtowr_api_sdk.api.cloud_storage_api", "CloudStorageApi", "get_list_asset_cloud_storages"),
+    ("watchtowr_api_sdk.api.cloud_storage_api", "CloudStorageApi", "get_asset_cloud_storage_details"),
+    ("watchtowr_api_sdk.api.cloud_storage_api", "CloudStorageApi", "update_asset_cloud_storage_status"),
     # Asset source code repos
-    ("watchtowr_api.api.asset_source_code_repositories_api", "AssetSourceCodeRepositoriesApi", "get_list_asset_repositories"),
-    ("watchtowr_api.api.asset_source_code_repositories_api", "AssetSourceCodeRepositoriesApi", "get_asset_repository_details"),
-    ("watchtowr_api.api.asset_source_code_repositories_api", "AssetSourceCodeRepositoriesApi", "update_asset_repository_status"),
+    ("watchtowr_api_sdk.api.repositories_api", "RepositoriesApi", "get_list_asset_repositories"),
+    ("watchtowr_api_sdk.api.repositories_api", "RepositoriesApi", "get_asset_repository_details"),
+    ("watchtowr_api_sdk.api.repositories_api", "RepositoriesApi", "update_asset_repository_status"),
     # Asset containers
-    ("watchtowr_api.api.asset_containers_api", "AssetContainersApi", "get_list_asset_container"),
-    ("watchtowr_api.api.asset_containers_api", "AssetContainersApi", "get_asset_container_details"),
-    ("watchtowr_api.api.asset_containers_api", "AssetContainersApi", "update_asset_container_status"),
+    ("watchtowr_api_sdk.api.containers_api", "ContainersApi", "get_list_asset_container"),
+    ("watchtowr_api_sdk.api.containers_api", "ContainersApi", "get_asset_container_details"),
+    ("watchtowr_api_sdk.api.containers_api", "ContainersApi", "update_asset_container_status"),
     # Asset SaaS platforms
-    ("watchtowr_api.api.asset_saa_s_platforms_api", "AssetSaaSPlatformsApi", "get_list_asset_saas_platforms"),
-    ("watchtowr_api.api.asset_saa_s_platforms_api", "AssetSaaSPlatformsApi", "get_asset_saas_platform_details"),
-    ("watchtowr_api.api.asset_saa_s_platforms_api", "AssetSaaSPlatformsApi", "update_asset_saas_platform_status"),
+    ("watchtowr_api_sdk.api.saa_s_platforms_api", "SaaSPlatformsApi", "get_list_asset_saas_platforms"),
+    ("watchtowr_api_sdk.api.saa_s_platforms_api", "SaaSPlatformsApi", "get_asset_saas_platform_details"),
+    ("watchtowr_api_sdk.api.saa_s_platforms_api", "SaaSPlatformsApi", "update_asset_saas_platform_status"),
     # Asset mobile apps
-    ("watchtowr_api.api.asset_mobile_applications_api", "AssetMobileApplicationsApi", "get_list_asset_mobile_apps"),
-    ("watchtowr_api.api.asset_mobile_applications_api", "AssetMobileApplicationsApi", "get_asset_mobile_app_details"),
-    ("watchtowr_api.api.asset_mobile_applications_api", "AssetMobileApplicationsApi", "update_asset_mobile_app_status"),
+    ("watchtowr_api_sdk.api.mobile_applications_api", "MobileApplicationsApi", "get_list_asset_mobile_apps"),
+    ("watchtowr_api_sdk.api.mobile_applications_api", "MobileApplicationsApi", "get_asset_mobile_app_details"),
+    ("watchtowr_api_sdk.api.mobile_applications_api", "MobileApplicationsApi", "update_asset_mobile_app_status"),
     # Add asset
-    ("watchtowr_api.api.add_asset_api", "AddAssetApi", "submit_asset"),
+    ("watchtowr_api_sdk.api.add_asset_api", "AddAssetApi", "submit_asset"),
     # Suspicious domains
-    ("watchtowr_api.api.suspicious_domains_api", "SuspiciousDomainsApi", "get_list_suspicious_domain"),
-    ("watchtowr_api.api.suspicious_domains_api", "SuspiciousDomainsApi", "get_suspicious_domain_details"),
+    ("watchtowr_api_sdk.api.suspicious_domains_api", "SuspiciousDomainsApi", "get_list_suspicious_domain"),
+    ("watchtowr_api_sdk.api.suspicious_domains_api", "SuspiciousDomainsApi", "get_suspicious_domain_details"),
     # Points of interest
-    ("watchtowr_api.api.points_of_interest_api", "PointsOfInterestApi", "get_list_points_of_interest"),
+    ("watchtowr_api_sdk.api.points_of_interest_api", "PointsOfInterestApi", "get_list_points_of_interest"),
     # Certificates
-    ("watchtowr_api.api.certificates_api", "CertificatesApi", "get_list_certificates"),
-    ("watchtowr_api.api.certificates_api", "CertificatesApi", "get_certificate_details"),
+    ("watchtowr_api_sdk.api.certificates_api", "CertificatesApi", "get_list_certificates"),
+    ("watchtowr_api_sdk.api.certificates_api", "CertificatesApi", "get_certificate_details"),
 ]
 
 
 MODEL_IMPORTS = [
-    ("watchtowr_api.models.update_client_finding_status_request_body", "UpdateClientFindingStatusRequestBody"),
-    ("watchtowr_api.models.update_client_legacy_asset_status_dto", "UpdateClientLegacyAssetStatusDto"),
-    ("watchtowr_api.models.update_client_next_gen_asset_status_dto", "UpdateClientNextGenAssetStatusDto"),
-    ("watchtowr_api.models.create_client_seed_data_request_body", "CreateClientSeedDataRequestBody"),
-    ("watchtowr_api.models.client_seed_data", "ClientSeedData"),
+    ("watchtowr_api_sdk.models.update_client_finding_status_request_body", "UpdateClientFindingStatusRequestBody"),
+    ("watchtowr_api_sdk.models.update_client_legacy_asset_status_dto", "UpdateClientLegacyAssetStatusDto"),
+    ("watchtowr_api_sdk.models.update_client_next_gen_asset_status_dto", "UpdateClientNextGenAssetStatusDto"),
+    ("watchtowr_api_sdk.models.create_client_seed_data_request_body", "CreateClientSeedDataRequestBody"),
+    ("watchtowr_api_sdk.models.client_seed_data", "ClientSeedData"),
 ]
 
 
 INFRA_IMPORTS = [
-    ("watchtowr_api.configuration", "Configuration"),
-    ("watchtowr_api.api_client", "ApiClient"),
+    ("watchtowr_api_sdk.configuration", "Configuration"),
+    ("watchtowr_api_sdk.api_client", "ApiClient"),
 ]
 
 
@@ -180,14 +180,14 @@ class _SDKCallVisitor(ast.NodeVisitor):
 
     3. Class+method-name pairs carried in tuple literals (dispatch tables)::
 
-           _ASSET_API_MAP = [("Domains", AssetDomainsApi, "get_list_asset_domains"), ...]
-           legacy_types = {"domain": (AssetDomainsApi, "update_asset_domain_status")}
+           _ASSET_API_MAP = [("Domains", DomainsApi, "get_list_asset_domains"), ...]
+           legacy_types = {"domain": (DomainsApi, "update_asset_domain_status")}
 
        The second/third element pattern handles both 2-tuples and 3-tuples.
     """
 
     def __init__(self, imported_api_classes: dict[str, str]):
-        # class_name -> module dotted path (e.g. "FindingsApi" -> "watchtowr_api.api.findings_api")
+        # class_name -> module dotted path (e.g. "FindingsApi" -> "watchtowr_api_sdk.api.findings_api")
         self.imported = imported_api_classes
         # local variable name -> class name
         self.var_to_class: dict[str, str] = {}
@@ -241,12 +241,12 @@ class _SDKCallVisitor(ast.NodeVisitor):
 
 
 def _collect_imports(tree: ast.Module) -> dict[str, str]:
-    """Map `class_name` -> `module` for `from watchtowr_api.api.<mod> import <Class>`."""
+    """Map `class_name` -> `module` for `from watchtowr_api_sdk.api.<mod> import <Class>`."""
     imported: dict[str, str] = {}
     for node in ast.walk(tree):
         if not isinstance(node, ast.ImportFrom):
             continue
-        if not node.module or not node.module.startswith("watchtowr_api.api."):
+        if not node.module or not node.module.startswith("watchtowr_api_sdk.api."):
             continue
         for alias in node.names:
             name = alias.asname or alias.name

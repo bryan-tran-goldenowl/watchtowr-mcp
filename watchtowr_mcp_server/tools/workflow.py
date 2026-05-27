@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 
-from watchtowr_api.api.findings_api import FindingsApi
-from watchtowr_api.api.activity_log_api import ActivityLogApi
-from watchtowr_api.models.update_client_finding_status_request_body import UpdateClientFindingStatusRequestBody
+from watchtowr_api_sdk.api.findings_api import FindingsApi
+from watchtowr_api_sdk.api.activity_log_api import ActivityLogApi
+from watchtowr_api_sdk.models.update_client_finding_status_request_body import UpdateClientFindingStatusRequestBody
 
 from ..client import get_api_client, get_total, parse_date, severity_display
 from ..constants import SUMMARY_SEVERITIES
@@ -25,7 +25,7 @@ def register_workflow_tools(mcp):
             since = datetime.now() - timedelta(days=days)
 
             resp = findings_api.get_list_findings(
-                statuses="Remediated",
+                statuses="remediated",
                 created_from=since,
                 page_size=min(page_size, 30),
             )
@@ -162,7 +162,7 @@ def register_workflow_tools(mcp):
                 try:
                     findings_api.update_finding_status(
                         id=fid,
-                        api_token="",
+                        
                         update_client_finding_status_request_body=body,
                     )
                     results.append(f"• Finding {fid}: updated to {status}")
@@ -193,7 +193,7 @@ def register_workflow_tools(mcp):
             for sev in SUMMARY_SEVERITIES:
                 kwargs = {
                     "severities": sev,
-                    "statuses": "Open,Triaged,In Progress",
+                    "statuses": "confirmed,unconfirmed",
                     "page_size": min(page_size, 30),
                 }
                 if assignee:
@@ -248,7 +248,7 @@ def register_workflow_tools(mcp):
                 try:
                     resp = findings_api.get_list_findings(
                         severities=sev,
-                        statuses="Open,Triaged,In Progress",
+                        statuses="confirmed,unconfirmed",
                         assignee="No Assignee",
                         page_size=min(page_size, 30),
                     )

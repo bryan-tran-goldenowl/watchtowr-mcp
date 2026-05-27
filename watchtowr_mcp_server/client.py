@@ -1,8 +1,8 @@
 import os
 from datetime import datetime
 
-from watchtowr_api.configuration import Configuration
-from watchtowr_api.api_client import ApiClient
+from watchtowr_api_sdk.configuration import Configuration
+from watchtowr_api_sdk.api_client import ApiClient
 
 _api_client = None
 

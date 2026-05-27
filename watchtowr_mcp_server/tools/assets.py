@@ -1,18 +1,18 @@
-from watchtowr_api.api.asset_ip_addresses_api import AssetIPAddressesApi
-from watchtowr_api.api.asset_domains_api import AssetDomainsApi
-from watchtowr_api.api.asset_subdomains_api import AssetSubdomainsApi
-from watchtowr_api.api.asset_ports_api import AssetPortsApi
-from watchtowr_api.api.asset_ip_ranges_api import AssetIPRangesApi
-from watchtowr_api.api.asset_cloud_storage_assets_api import AssetCloudStorageAssetsApi
-from watchtowr_api.api.asset_source_code_repositories_api import AssetSourceCodeRepositoriesApi
-from watchtowr_api.api.asset_containers_api import AssetContainersApi
-from watchtowr_api.api.asset_saa_s_platforms_api import AssetSaaSPlatformsApi
-from watchtowr_api.api.asset_mobile_applications_api import AssetMobileApplicationsApi
-from watchtowr_api.api.add_asset_api import AddAssetApi
-from watchtowr_api.models.update_client_legacy_asset_status_dto import UpdateClientLegacyAssetStatusDto
-from watchtowr_api.models.update_client_next_gen_asset_status_dto import UpdateClientNextGenAssetStatusDto
-from watchtowr_api.models.create_client_seed_data_request_body import CreateClientSeedDataRequestBody
-from watchtowr_api.models.client_seed_data import ClientSeedData
+from watchtowr_api_sdk.api.ip_addresses_api import IPAddressesApi
+from watchtowr_api_sdk.api.domains_api import DomainsApi
+from watchtowr_api_sdk.api.subdomains_api import SubdomainsApi
+from watchtowr_api_sdk.api.ports_api import PortsApi
+from watchtowr_api_sdk.api.ip_ranges_api import IPRangesApi
+from watchtowr_api_sdk.api.cloud_storage_api import CloudStorageApi
+from watchtowr_api_sdk.api.repositories_api import RepositoriesApi
+from watchtowr_api_sdk.api.containers_api import ContainersApi
+from watchtowr_api_sdk.api.saa_s_platforms_api import SaaSPlatformsApi
+from watchtowr_api_sdk.api.mobile_applications_api import MobileApplicationsApi
+from watchtowr_api_sdk.api.add_asset_api import AddAssetApi
+from watchtowr_api_sdk.models.update_client_legacy_asset_status_dto import UpdateClientLegacyAssetStatusDto
+from watchtowr_api_sdk.models.update_client_next_gen_asset_status_dto import UpdateClientNextGenAssetStatusDto
+from watchtowr_api_sdk.models.create_client_seed_data_request_body import CreateClientSeedDataRequestBody
+from watchtowr_api_sdk.models.client_seed_data import ClientSeedData
 
 from ..client import get_api_client, get_total, parse_date, format_bus
 
@@ -59,7 +59,7 @@ def register_asset_tools(mcp):
             page_size: Results per page (max 30).
         """
         try:
-            api = AssetIPAddressesApi(get_api_client())
+            api = IPAddressesApi(get_api_client())
             kwargs = _build_asset_kwargs(page, page_size, asset_name, statuses,
                                          business_unit_ids, created_from, created_to)
             response = api.get_list_asset_ips(**kwargs)
@@ -95,8 +95,8 @@ def register_asset_tools(mcp):
             ip_id: The IP address asset ID.
         """
         try:
-            api = AssetIPAddressesApi(get_api_client())
-            response = api.get_asset_ip_details(id=ip_id, api_token="")
+            api = IPAddressesApi(get_api_client())
+            response = api.get_asset_ip_details(id=ip_id)
 
             ip = response.data if hasattr(response, 'data') else response
             if not ip:
@@ -139,7 +139,7 @@ def register_asset_tools(mcp):
             page_size: Results per page (max 30).
         """
         try:
-            api = AssetIPAddressesApi(get_api_client())
+            api = IPAddressesApi(get_api_client())
             kwargs = _build_asset_kwargs(page, page_size, asset_name, statuses,
                                          business_unit_ids)
             response = api.get_asset_ip_ports(id=ip_id, **kwargs)
@@ -168,7 +168,7 @@ def register_asset_tools(mcp):
             return f"Error listing ports for IP: {e}"
 
     @mcp.tool()
-    def get_ip_port_details(ip_id: str, port_id: str) -> str:
+    def get_ip_port_details(ip_id: int, port_id: int) -> str:
         """Get full details for a specific port belonging to an IP address.
 
         Args:
@@ -176,9 +176,9 @@ def register_asset_tools(mcp):
             port_id: The port asset ID (as string).
         """
         try:
-            api = AssetIPAddressesApi(get_api_client())
+            api = IPAddressesApi(get_api_client())
             response = api.get_asset_ip_port_details(
-                ip_id=ip_id, port_id=port_id, api_token=""
+                ip_id=int(ip_id), port_id=int(port_id)
             )
 
             p = response.data if hasattr(response, 'data') else response
@@ -226,7 +226,7 @@ def register_asset_tools(mcp):
             page_size: Results per page (max 30).
         """
         try:
-            api = AssetDomainsApi(get_api_client())
+            api = DomainsApi(get_api_client())
             kwargs = _build_asset_kwargs(page, page_size, asset_name, statuses,
                                          business_unit_ids, created_from, created_to)
             response = api.get_list_asset_domains(**kwargs)
@@ -260,8 +260,8 @@ def register_asset_tools(mcp):
             domain_id: The domain asset ID.
         """
         try:
-            api = AssetDomainsApi(get_api_client())
-            response = api.get_asset_domain_details(id=domain_id, api_token="")
+            api = DomainsApi(get_api_client())
+            response = api.get_asset_domain_details(id=int(domain_id))
 
             d = response.data if hasattr(response, 'data') else response
             if not d:
@@ -307,7 +307,7 @@ def register_asset_tools(mcp):
             page_size: Results per page (max 30).
         """
         try:
-            api = AssetSubdomainsApi(get_api_client())
+            api = SubdomainsApi(get_api_client())
             kwargs = _build_asset_kwargs(page, page_size, asset_name, statuses,
                                          business_unit_ids, created_from, created_to)
             response = api.get_list_asset_subdomains(**kwargs)
@@ -341,8 +341,8 @@ def register_asset_tools(mcp):
             subdomain_id: The subdomain asset ID.
         """
         try:
-            api = AssetSubdomainsApi(get_api_client())
-            response = api.get_asset_subdomain_details(id=subdomain_id, api_token="")
+            api = SubdomainsApi(get_api_client())
+            response = api.get_asset_subdomain_details(id=int(subdomain_id))
 
             s = response.data if hasattr(response, 'data') else response
             if not s:
@@ -388,7 +388,7 @@ def register_asset_tools(mcp):
             page_size: Results per page (max 30).
         """
         try:
-            api = AssetPortsApi(get_api_client())
+            api = PortsApi(get_api_client())
             kwargs = _build_asset_kwargs(page, page_size, asset_name, statuses,
                                          business_unit_ids, created_from, created_to)
             response = api.get_list_asset_ports(**kwargs)
@@ -424,8 +424,8 @@ def register_asset_tools(mcp):
             port_id: The port asset ID.
         """
         try:
-            api = AssetPortsApi(get_api_client())
-            response = api.get_asset_port_details(id=port_id, api_token="")
+            api = PortsApi(get_api_client())
+            response = api.get_asset_port_details(id=int(port_id))
 
             p = response.data if hasattr(response, 'data') else response
             if not p:
@@ -471,7 +471,7 @@ def register_asset_tools(mcp):
             page_size: Results per page (max 30).
         """
         try:
-            api = AssetIPRangesApi(get_api_client())
+            api = IPRangesApi(get_api_client())
             kwargs = _build_asset_kwargs(page, page_size, asset_name, statuses,
                                          business_unit_ids, created_from, created_to)
             response = api.get_list_asset_ipranges(**kwargs)
@@ -514,8 +514,8 @@ def register_asset_tools(mcp):
             iprange_id: The IP range asset ID.
         """
         try:
-            api = AssetIPRangesApi(get_api_client())
-            response = api.get_asset_iprange_details(id=iprange_id, api_token="")
+            api = IPRangesApi(get_api_client())
+            response = api.get_asset_iprange_details(id=int(iprange_id))
 
             r = response.data if hasattr(response, 'data') else response
             if not r:
@@ -563,7 +563,7 @@ def register_asset_tools(mcp):
             page_size: Results per page (max 30).
         """
         try:
-            api = AssetCloudStorageAssetsApi(get_api_client())
+            api = CloudStorageApi(get_api_client())
             kwargs = _build_asset_kwargs(page, page_size, asset_name, statuses,
                                          business_unit_ids, created_from, created_to)
             response = api.get_list_asset_cloud_storages(**kwargs)
@@ -600,9 +600,9 @@ def register_asset_tools(mcp):
             cloud_storage_id: The cloud storage asset ID.
         """
         try:
-            api = AssetCloudStorageAssetsApi(get_api_client())
+            api = CloudStorageApi(get_api_client())
             response = api.get_asset_cloud_storage_details(
-                id=cloud_storage_id, api_token=""
+                id=int(cloud_storage_id)
             )
 
             cs = response.data if hasattr(response, 'data') else response
@@ -650,7 +650,7 @@ def register_asset_tools(mcp):
             page_size: Results per page (max 30).
         """
         try:
-            api = AssetSourceCodeRepositoriesApi(get_api_client())
+            api = RepositoriesApi(get_api_client())
             kwargs = _build_asset_kwargs(page, page_size, asset_name, statuses,
                                          business_unit_ids, created_from, created_to)
             response = api.get_list_asset_repositories(**kwargs)
@@ -687,9 +687,9 @@ def register_asset_tools(mcp):
             repository_id: The repository asset ID.
         """
         try:
-            api = AssetSourceCodeRepositoriesApi(get_api_client())
+            api = RepositoriesApi(get_api_client())
             response = api.get_asset_repository_details(
-                id=repository_id, api_token=""
+                id=int(repository_id)
             )
 
             r = response.data if hasattr(response, 'data') else response
@@ -737,7 +737,7 @@ def register_asset_tools(mcp):
             page_size: Results per page (max 30).
         """
         try:
-            api = AssetContainersApi(get_api_client())
+            api = ContainersApi(get_api_client())
             kwargs = _build_asset_kwargs(page, page_size, asset_name, statuses,
                                          business_unit_ids, created_from, created_to)
             response = api.get_list_asset_container(**kwargs)
@@ -774,9 +774,9 @@ def register_asset_tools(mcp):
             container_id: The container asset ID.
         """
         try:
-            api = AssetContainersApi(get_api_client())
+            api = ContainersApi(get_api_client())
             response = api.get_asset_container_details(
-                id=container_id, api_token=""
+                id=int(container_id)
             )
 
             c = response.data if hasattr(response, 'data') else response
@@ -825,7 +825,7 @@ def register_asset_tools(mcp):
             page_size: Results per page (max 30).
         """
         try:
-            api = AssetSaaSPlatformsApi(get_api_client())
+            api = SaaSPlatformsApi(get_api_client())
             kwargs = _build_asset_kwargs(page, page_size, asset_name, statuses,
                                          business_unit_ids, created_from, created_to)
             response = api.get_list_asset_saas_platforms(**kwargs)
@@ -860,9 +860,9 @@ def register_asset_tools(mcp):
             saas_id: The SaaS platform asset ID.
         """
         try:
-            api = AssetSaaSPlatformsApi(get_api_client())
+            api = SaaSPlatformsApi(get_api_client())
             response = api.get_asset_saas_platform_details(
-                id=saas_id, api_token=""
+                id=int(saas_id)
             )
 
             s = response.data if hasattr(response, 'data') else response
@@ -909,7 +909,7 @@ def register_asset_tools(mcp):
             page_size: Results per page (max 30).
         """
         try:
-            api = AssetMobileApplicationsApi(get_api_client())
+            api = MobileApplicationsApi(get_api_client())
             kwargs = _build_asset_kwargs(page, page_size, asset_name, statuses,
                                          business_unit_ids, created_from, created_to)
             response = api.get_list_asset_mobile_apps(**kwargs)
@@ -946,9 +946,9 @@ def register_asset_tools(mcp):
             mobile_app_id: The mobile application asset ID.
         """
         try:
-            api = AssetMobileApplicationsApi(get_api_client())
+            api = MobileApplicationsApi(get_api_client())
             response = api.get_asset_mobile_app_details(
-                id=mobile_app_id, api_token=""
+                id=int(mobile_app_id)
             )
 
             m = response.data if hasattr(response, 'data') else response
@@ -995,17 +995,17 @@ def register_asset_tools(mcp):
             client = get_api_client()
 
             legacy_types = {
-                "domain": (AssetDomainsApi, "update_asset_domain_status"),
-                "subdomain": (AssetSubdomainsApi, "update_asset_subdomain_status"),
-                "ip": (AssetIPAddressesApi, "update_asset_ip_status"),
-                "ip_range": (AssetIPRangesApi, "update_asset_ip_range_status"),
+                "domain": (DomainsApi, "update_asset_domain_status"),
+                "subdomain": (SubdomainsApi, "update_asset_subdomain_status"),
+                "ip": (IPAddressesApi, "update_asset_ip_status"),
+                "ip_range": (IPRangesApi, "update_asset_ip_range_status"),
             }
             nextgen_types = {
-                "container": (AssetContainersApi, "update_asset_container_status"),
-                "cloud_storage": (AssetCloudStorageAssetsApi, "update_asset_cloud_storage_status"),
-                "saas_platform": (AssetSaaSPlatformsApi, "update_asset_saas_platform_status"),
-                "mobile_app": (AssetMobileApplicationsApi, "update_asset_mobile_app_status"),
-                "repository": (AssetSourceCodeRepositoriesApi, "update_asset_repository_status"),
+                "container": (ContainersApi, "update_asset_container_status"),
+                "cloud_storage": (CloudStorageApi, "update_asset_cloud_storage_status"),
+                "saas_platform": (SaaSPlatformsApi, "update_asset_saas_platform_status"),
+                "mobile_app": (MobileApplicationsApi, "update_asset_mobile_app_status"),
+                "repository": (RepositoriesApi, "update_asset_repository_status"),
             }
 
             if asset_type in legacy_types:
