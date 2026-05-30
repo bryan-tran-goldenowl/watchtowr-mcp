@@ -64,3 +64,37 @@ def test_patches_are_idempotent():
     """Calling apply_*_patches a second time must not error."""
     apply_watchtowr_sdk_compat_patches()
     apply_watchtowr_sdk_compat_patches()
+
+
+def test_client_ip_from_dict_handles_string_id():
+    """Verify that the ClientIp.from_dict handles string IDs cleanly as per the reconciled schema."""
+    from watchtowr_api_sdk.models.client_ip import ClientIp
+    # Minimal payload matching the ClientIp model requirements
+    ip_payload = {
+        "type": "ip",
+        "source": "manual",
+        "status": "verified",
+        "created_at": "2026-05-29T16:10:47Z",
+        "id": "79985",
+        "name": "1.2.3.4",
+        "businessUnits": [],
+        "country": "SG",
+        "live": True,
+        "metadata": {},
+        "customProperties": [],
+
+        "engineSettings": {
+            "adversarySightEnabled": True,
+            "automatedRedTeamingEnabled": True,
+            "credentialStuffingEnabled": True,
+            "dnsBruteforcingEnabled": False,
+            "rapidReactionEnabled": True,
+            "intrusiveHttpChecksEnabled": False
+        }
+    }
+    client_ip = ClientIp.from_dict(ip_payload)
+    assert client_ip is not None
+    assert client_ip.id == "79985"
+
+
+

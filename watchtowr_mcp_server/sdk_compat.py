@@ -159,6 +159,11 @@ def apply_watchtowr_sdk_compat_patches() -> None:
             assigned_user=ClientFindingAssignee.from_dict(obj["assigned_user"])
             if obj.get("assigned_user") is not None
             else None,
+            state=obj.get("state"),
+            last_seen=obj.get("last_seen"),
+            age=obj.get("age"),
+            criticality=obj.get("criticality"),
+            detection_rules=obj.get("detection_rules"),
         )
 
     cf_mod.ClientFinding.from_dict = classmethod(client_finding_from_dict)  # type: ignore[assignment]
@@ -166,7 +171,9 @@ def apply_watchtowr_sdk_compat_patches() -> None:
     retest_mod.Retest.model_rebuild(force=True)
     cf_mod.ClientFinding.model_rebuild(force=True)
     pcf_mod.PaginatedClientFindings.model_rebuild(force=True)
+    
 
     import watchtowr_api_sdk.models as models_pkg
 
     models_pkg.FindingRetestResponseDto = dto_mod.FindingRetestResponseDto
+

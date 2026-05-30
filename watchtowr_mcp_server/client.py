@@ -59,6 +59,11 @@ def get_api_client() -> ApiClient:
     configuration.access_token = api_key
 
     _api_client = SecureApiClient(configuration)
+    
+    tenant_id = os.environ.get("WATCHTOWR_TENANT_ID")
+    if tenant_id:
+        _api_client.set_default_header("x-tenant-id", tenant_id)
+        
     return _api_client
 
 

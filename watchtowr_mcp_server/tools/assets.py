@@ -8,17 +8,25 @@ from watchtowr_api_sdk.api.repositories_api import RepositoriesApi
 from watchtowr_api_sdk.api.containers_api import ContainersApi
 from watchtowr_api_sdk.api.saa_s_platforms_api import SaaSPlatformsApi
 from watchtowr_api_sdk.api.mobile_applications_api import MobileApplicationsApi
+from watchtowr_api_sdk.api.cloud_integration_assets_api import CloudIntegrationAssetsApi
+from watchtowr_api_sdk.api.api_documentation_api import APIDocumentationApi
+from watchtowr_api_sdk.api.package_managers_api import PackageManagersApi
 from watchtowr_api_sdk.api.add_asset_api import AddAssetApi
 from watchtowr_api_sdk.models.update_client_legacy_asset_status_dto import UpdateClientLegacyAssetStatusDto
 from watchtowr_api_sdk.models.update_client_next_gen_asset_status_dto import UpdateClientNextGenAssetStatusDto
+from watchtowr_api_sdk.models.update_client_cloud_asset_status_dto import UpdateClientCloudAssetStatusDto
+from watchtowr_api_sdk.models.update_api_documentation_status_dto import UpdateApiDocumentationStatusDto
 from watchtowr_api_sdk.models.create_client_seed_data_request_body import CreateClientSeedDataRequestBody
 from watchtowr_api_sdk.models.client_seed_data import ClientSeedData
+import inspect
 
 from ..client import get_api_client, get_total, parse_date, format_bus
 
 
 def _build_asset_kwargs(page, page_size, asset_name=None, statuses=None,
-                        business_unit_ids=None, created_from=None, created_to=None):
+                        business_unit_ids=None, created_from=None, created_to=None,
+                        source=None, integration_connections=None,
+                        custom_property_key=None, custom_property_value=None):
     kwargs = {"page": page, "page_size": min(page_size, 30)}
     if asset_name:
         kwargs["asset_name"] = asset_name
@@ -30,7 +38,20 @@ def _build_asset_kwargs(page, page_size, asset_name=None, statuses=None,
         kwargs["created_from"] = parse_date(created_from)
     if created_to:
         kwargs["created_to"] = parse_date(created_to)
+    if source:
+        kwargs["source"] = source
+    if integration_connections:
+        kwargs["integration_connections"] = integration_connections
+    if custom_property_key:
+        kwargs["custom_property_key"] = custom_property_key
+    if custom_property_value:
+        kwargs["custom_property_value"] = custom_property_value
     return kwargs
+
+
+def _filter_kwargs(func, kwargs):
+    sig = inspect.signature(func)
+    return {k: v for k, v in kwargs.items() if k in sig.parameters}
 
 
 def register_asset_tools(mcp):
@@ -44,6 +65,11 @@ def register_asset_tools(mcp):
         business_unit_ids: str = None,
         created_from: str = None,
         created_to: str = None,
+        source: str = None,
+        integration_connections: str = None,
+        custom_property_key: str = None,
+        custom_property_value: str = None,
+        match_type: str = None,
         page: int = 1,
         page_size: int = 30,
     ) -> str:
@@ -55,14 +81,24 @@ def register_asset_tools(mcp):
             business_unit_ids: Comma-separated business unit IDs.
             created_from: Start date (YYYY-MM-DD).
             created_to: End date (YYYY-MM-DD).
+            source: Filter assets by the source that discovered the asset.
+            integration_connections: Filter assets by integration connections.
+            custom_property_key: Filter assets by custom property key.
+            custom_property_value: Filter assets by custom property value.
+            match_type: Filter by match type ('exact' or 'partial').
             page: Page number.
             page_size: Results per page (max 30).
         """
         try:
             api = IPAddressesApi(get_api_client())
-            kwargs = _build_asset_kwargs(page, page_size, asset_name, statuses,
-                                         business_unit_ids, created_from, created_to)
-            response = api.get_list_asset_ips(**kwargs)
+            kwargs = _build_asset_kwargs(
+                page, page_size, asset_name, statuses, business_unit_ids,
+                created_from, created_to, source, integration_connections,
+                custom_property_key, custom_property_value
+            )
+            if match_type:
+                kwargs["match_type"] = match_type
+            response = api.get_list_asset_ips(**_filter_kwargs(api.get_list_asset_ips, kwargs))
 
             if not hasattr(response, 'data') or not response.data:
                 return "No IP addresses found."
@@ -122,9 +158,10 @@ def register_asset_tools(mcp):
     @mcp.tool()
     def list_ports_for_ip(
         ip_id: int,
-        asset_name: str = None,
-        statuses: str = None,
-        business_unit_ids: str = None,
+        include_closed_port: bool = None,
+        include_no_service: bool = None,
+        created_from: str = None,
+        created_to: str = None,
         page: int = 1,
         page_size: int = 30,
     ) -> str:
@@ -132,17 +169,25 @@ def register_asset_tools(mcp):
 
         Args:
             ip_id: The IP address asset ID.
-            asset_name: Filter by port/service name.
-            statuses: Comma-separated status filters.
-            business_unit_ids: Comma-separated business unit IDs.
+            include_closed_port: Include listings with closed ports.
+            include_no_service: Include listings without a service.
+            created_from: Filter ports created after a given date and time.
+            created_to: Filter ports created before a given date and time.
             page: Page number.
             page_size: Results per page (max 30).
         """
         try:
             api = IPAddressesApi(get_api_client())
-            kwargs = _build_asset_kwargs(page, page_size, asset_name, statuses,
-                                         business_unit_ids)
-            response = api.get_asset_ip_ports(id=ip_id, **kwargs)
+            kwargs = {"page": page, "page_size": min(page_size, 30)}
+            if include_closed_port is not None:
+                kwargs["include_closed_port"] = include_closed_port
+            if include_no_service is not None:
+                kwargs["include_no_service"] = include_no_service
+            if created_from:
+                kwargs["created_from"] = parse_date(created_from)
+            if created_to:
+                kwargs["created_to"] = parse_date(created_to)
+            response = api.get_asset_ip_ports(id=ip_id, **_filter_kwargs(api.get_asset_ip_ports, kwargs))
 
             if not hasattr(response, 'data') or not response.data:
                 return f"No ports found for IP {ip_id}."
@@ -211,6 +256,10 @@ def register_asset_tools(mcp):
         business_unit_ids: str = None,
         created_from: str = None,
         created_to: str = None,
+        source: str = None,
+        integration_connections: str = None,
+        custom_property_key: str = None,
+        custom_property_value: str = None,
         page: int = 1,
         page_size: int = 30,
     ) -> str:
@@ -222,14 +271,21 @@ def register_asset_tools(mcp):
             business_unit_ids: Comma-separated business unit IDs.
             created_from: Start date (YYYY-MM-DD).
             created_to: End date (YYYY-MM-DD).
+            source: Filter assets by the source that discovered the asset.
+            integration_connections: Filter assets by integration connections.
+            custom_property_key: Filter assets by custom property key.
+            custom_property_value: Filter assets by custom property value.
             page: Page number.
             page_size: Results per page (max 30).
         """
         try:
             api = DomainsApi(get_api_client())
-            kwargs = _build_asset_kwargs(page, page_size, asset_name, statuses,
-                                         business_unit_ids, created_from, created_to)
-            response = api.get_list_asset_domains(**kwargs)
+            kwargs = _build_asset_kwargs(
+                page, page_size, asset_name, statuses, business_unit_ids,
+                created_from, created_to, source, integration_connections,
+                custom_property_key, custom_property_value
+            )
+            response = api.get_list_asset_domains(**_filter_kwargs(api.get_list_asset_domains, kwargs))
 
             if not hasattr(response, 'data') or not response.data:
                 return "No domains found."
@@ -292,6 +348,10 @@ def register_asset_tools(mcp):
         business_unit_ids: str = None,
         created_from: str = None,
         created_to: str = None,
+        source: str = None,
+        integration_connections: str = None,
+        custom_property_key: str = None,
+        custom_property_value: str = None,
         page: int = 1,
         page_size: int = 30,
     ) -> str:
@@ -303,14 +363,21 @@ def register_asset_tools(mcp):
             business_unit_ids: Comma-separated business unit IDs.
             created_from: Start date (YYYY-MM-DD).
             created_to: End date (YYYY-MM-DD).
+            source: Filter assets by the source that discovered the asset.
+            integration_connections: Filter assets by integration connections.
+            custom_property_key: Filter assets by custom property key.
+            custom_property_value: Filter assets by custom property value.
             page: Page number.
             page_size: Results per page (max 30).
         """
         try:
             api = SubdomainsApi(get_api_client())
-            kwargs = _build_asset_kwargs(page, page_size, asset_name, statuses,
-                                         business_unit_ids, created_from, created_to)
-            response = api.get_list_asset_subdomains(**kwargs)
+            kwargs = _build_asset_kwargs(
+                page, page_size, asset_name, statuses, business_unit_ids,
+                created_from, created_to, source, integration_connections,
+                custom_property_key, custom_property_value
+            )
+            response = api.get_list_asset_subdomains(**_filter_kwargs(api.get_list_asset_subdomains, kwargs))
 
             if not hasattr(response, 'data') or not response.data:
                 return "No subdomains found."
@@ -373,6 +440,12 @@ def register_asset_tools(mcp):
         business_unit_ids: str = None,
         created_from: str = None,
         created_to: str = None,
+        source: str = None,
+        integration_connections: str = None,
+        custom_property_key: str = None,
+        custom_property_value: str = None,
+        include_closed_port: bool = None,
+        include_no_service: bool = None,
         page: int = 1,
         page_size: int = 30,
     ) -> str:
@@ -384,14 +457,27 @@ def register_asset_tools(mcp):
             business_unit_ids: Comma-separated business unit IDs.
             created_from: Start date (YYYY-MM-DD).
             created_to: End date (YYYY-MM-DD).
+            source: Filter assets by the source that discovered the asset.
+            integration_connections: Filter assets by integration connections.
+            custom_property_key: Filter assets by custom property key.
+            custom_property_value: Filter assets by custom property value.
+            include_closed_port: Include listings with closed ports.
+            include_no_service: Include listings without a service.
             page: Page number.
             page_size: Results per page (max 30).
         """
         try:
             api = PortsApi(get_api_client())
-            kwargs = _build_asset_kwargs(page, page_size, asset_name, statuses,
-                                         business_unit_ids, created_from, created_to)
-            response = api.get_list_asset_ports(**kwargs)
+            kwargs = _build_asset_kwargs(
+                page, page_size, asset_name, statuses, business_unit_ids,
+                created_from, created_to, source, integration_connections,
+                custom_property_key, custom_property_value
+            )
+            if include_closed_port is not None:
+                kwargs["include_closed_port"] = include_closed_port
+            if include_no_service is not None:
+                kwargs["include_no_service"] = include_no_service
+            response = api.get_list_asset_ports(**_filter_kwargs(api.get_list_asset_ports, kwargs))
 
             if not hasattr(response, 'data') or not response.data:
                 return "No ports found."
@@ -456,6 +542,10 @@ def register_asset_tools(mcp):
         business_unit_ids: str = None,
         created_from: str = None,
         created_to: str = None,
+        source: str = None,
+        integration_connections: str = None,
+        custom_property_key: str = None,
+        custom_property_value: str = None,
         page: int = 1,
         page_size: int = 30,
     ) -> str:
@@ -467,14 +557,21 @@ def register_asset_tools(mcp):
             business_unit_ids: Comma-separated business unit IDs.
             created_from: Start date (YYYY-MM-DD).
             created_to: End date (YYYY-MM-DD).
+            source: Filter assets by the source that discovered the asset.
+            integration_connections: Filter assets by integration connections.
+            custom_property_key: Filter assets by custom property key.
+            custom_property_value: Filter assets by custom property value.
             page: Page number.
             page_size: Results per page (max 30).
         """
         try:
             api = IPRangesApi(get_api_client())
-            kwargs = _build_asset_kwargs(page, page_size, asset_name, statuses,
-                                         business_unit_ids, created_from, created_to)
-            response = api.get_list_asset_ipranges(**kwargs)
+            kwargs = _build_asset_kwargs(
+                page, page_size, asset_name, statuses, business_unit_ids,
+                created_from, created_to, source, integration_connections,
+                custom_property_key, custom_property_value
+            )
+            response = api.get_list_asset_ipranges(**_filter_kwargs(api.get_list_asset_ipranges, kwargs))
 
             if not hasattr(response, 'data') or not response.data:
                 return "No IP ranges found."
@@ -548,6 +645,10 @@ def register_asset_tools(mcp):
         business_unit_ids: str = None,
         created_from: str = None,
         created_to: str = None,
+        source: str = None,
+        integration_connections: str = None,
+        custom_property_key: str = None,
+        custom_property_value: str = None,
         page: int = 1,
         page_size: int = 30,
     ) -> str:
@@ -559,14 +660,21 @@ def register_asset_tools(mcp):
             business_unit_ids: Comma-separated business unit IDs.
             created_from: Start date (YYYY-MM-DD).
             created_to: End date (YYYY-MM-DD).
+            source: Filter assets by the source that discovered the asset.
+            integration_connections: Filter assets by integration connections.
+            custom_property_key: Filter assets by custom property key.
+            custom_property_value: Filter assets by custom property value.
             page: Page number.
             page_size: Results per page (max 30).
         """
         try:
             api = CloudStorageApi(get_api_client())
-            kwargs = _build_asset_kwargs(page, page_size, asset_name, statuses,
-                                         business_unit_ids, created_from, created_to)
-            response = api.get_list_asset_cloud_storages(**kwargs)
+            kwargs = _build_asset_kwargs(
+                page, page_size, asset_name, statuses, business_unit_ids,
+                created_from, created_to, source, integration_connections,
+                custom_property_key, custom_property_value
+            )
+            response = api.get_list_asset_cloud_storages(**_filter_kwargs(api.get_list_asset_cloud_storages, kwargs))
 
             if not hasattr(response, 'data') or not response.data:
                 return "No cloud storage assets found."
@@ -635,6 +743,10 @@ def register_asset_tools(mcp):
         business_unit_ids: str = None,
         created_from: str = None,
         created_to: str = None,
+        source: str = None,
+        integration_connections: str = None,
+        custom_property_key: str = None,
+        custom_property_value: str = None,
         page: int = 1,
         page_size: int = 30,
     ) -> str:
@@ -646,14 +758,21 @@ def register_asset_tools(mcp):
             business_unit_ids: Comma-separated business unit IDs.
             created_from: Start date (YYYY-MM-DD).
             created_to: End date (YYYY-MM-DD).
+            source: Filter assets by the source that discovered the asset.
+            integration_connections: Filter assets by integration connections.
+            custom_property_key: Filter assets by custom property key.
+            custom_property_value: Filter assets by custom property value.
             page: Page number.
             page_size: Results per page (max 30).
         """
         try:
             api = RepositoriesApi(get_api_client())
-            kwargs = _build_asset_kwargs(page, page_size, asset_name, statuses,
-                                         business_unit_ids, created_from, created_to)
-            response = api.get_list_asset_repositories(**kwargs)
+            kwargs = _build_asset_kwargs(
+                page, page_size, asset_name, statuses, business_unit_ids,
+                created_from, created_to, source, integration_connections,
+                custom_property_key, custom_property_value
+            )
+            response = api.get_list_asset_repositories(**_filter_kwargs(api.get_list_asset_repositories, kwargs))
 
             if not hasattr(response, 'data') or not response.data:
                 return "No source code repositories found."
@@ -722,6 +841,10 @@ def register_asset_tools(mcp):
         business_unit_ids: str = None,
         created_from: str = None,
         created_to: str = None,
+        source: str = None,
+        integration_connections: str = None,
+        custom_property_key: str = None,
+        custom_property_value: str = None,
         page: int = 1,
         page_size: int = 30,
     ) -> str:
@@ -733,14 +856,21 @@ def register_asset_tools(mcp):
             business_unit_ids: Comma-separated business unit IDs.
             created_from: Start date (YYYY-MM-DD).
             created_to: End date (YYYY-MM-DD).
+            source: Filter assets by the source that discovered the asset.
+            integration_connections: Filter assets by integration connections.
+            custom_property_key: Filter assets by custom property key.
+            custom_property_value: Filter assets by custom property value.
             page: Page number.
             page_size: Results per page (max 30).
         """
         try:
             api = ContainersApi(get_api_client())
-            kwargs = _build_asset_kwargs(page, page_size, asset_name, statuses,
-                                         business_unit_ids, created_from, created_to)
-            response = api.get_list_asset_container(**kwargs)
+            kwargs = _build_asset_kwargs(
+                page, page_size, asset_name, statuses, business_unit_ids,
+                created_from, created_to, source, integration_connections,
+                custom_property_key, custom_property_value
+            )
+            response = api.get_list_asset_container(**_filter_kwargs(api.get_list_asset_container, kwargs))
 
             if not hasattr(response, 'data') or not response.data:
                 return "No container assets found."
@@ -810,6 +940,10 @@ def register_asset_tools(mcp):
         business_unit_ids: str = None,
         created_from: str = None,
         created_to: str = None,
+        source: str = None,
+        integration_connections: str = None,
+        custom_property_key: str = None,
+        custom_property_value: str = None,
         page: int = 1,
         page_size: int = 30,
     ) -> str:
@@ -821,14 +955,21 @@ def register_asset_tools(mcp):
             business_unit_ids: Comma-separated business unit IDs.
             created_from: Start date (YYYY-MM-DD).
             created_to: End date (YYYY-MM-DD).
+            source: Filter assets by the source that discovered the asset.
+            integration_connections: Filter assets by integration connections.
+            custom_property_key: Filter assets by custom property key.
+            custom_property_value: Filter assets by custom property value.
             page: Page number.
             page_size: Results per page (max 30).
         """
         try:
             api = SaaSPlatformsApi(get_api_client())
-            kwargs = _build_asset_kwargs(page, page_size, asset_name, statuses,
-                                         business_unit_ids, created_from, created_to)
-            response = api.get_list_asset_saas_platforms(**kwargs)
+            kwargs = _build_asset_kwargs(
+                page, page_size, asset_name, statuses, business_unit_ids,
+                created_from, created_to, source, integration_connections,
+                custom_property_key, custom_property_value
+            )
+            response = api.get_list_asset_saas_platforms(**_filter_kwargs(api.get_list_asset_saas_platforms, kwargs))
 
             if not hasattr(response, 'data') or not response.data:
                 return "No SaaS platforms found."
@@ -894,6 +1035,10 @@ def register_asset_tools(mcp):
         business_unit_ids: str = None,
         created_from: str = None,
         created_to: str = None,
+        source: str = None,
+        integration_connections: str = None,
+        custom_property_key: str = None,
+        custom_property_value: str = None,
         page: int = 1,
         page_size: int = 30,
     ) -> str:
@@ -905,14 +1050,21 @@ def register_asset_tools(mcp):
             business_unit_ids: Comma-separated business unit IDs.
             created_from: Start date (YYYY-MM-DD).
             created_to: End date (YYYY-MM-DD).
+            source: Filter assets by the source that discovered the asset.
+            integration_connections: Filter assets by integration connections.
+            custom_property_key: Filter assets by custom property key.
+            custom_property_value: Filter assets by custom property value.
             page: Page number.
             page_size: Results per page (max 30).
         """
         try:
             api = MobileApplicationsApi(get_api_client())
-            kwargs = _build_asset_kwargs(page, page_size, asset_name, statuses,
-                                         business_unit_ids, created_from, created_to)
-            response = api.get_list_asset_mobile_apps(**kwargs)
+            kwargs = _build_asset_kwargs(
+                page, page_size, asset_name, statuses, business_unit_ids,
+                created_from, created_to, source, integration_connections,
+                custom_property_key, custom_property_value
+            )
+            response = api.get_list_asset_mobile_apps(**_filter_kwargs(api.get_list_asset_mobile_apps, kwargs))
 
             if not hasattr(response, 'data') or not response.data:
                 return "No mobile applications found."
@@ -967,12 +1119,305 @@ def register_asset_tools(mcp):
                 f"Created: {getattr(m, 'created_at', 'N/A')}",
                 f"Updated: {getattr(m, 'updated_at', 'N/A')}",
             ]
-            bus = format_bus(getattr(m, 'business_units', []))
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Error retrieving mobile app details: {e}"
+
+    # ── Cloud Assets (Integration) ────────────────────────────────
+
+    @mcp.tool()
+    def list_cloud_assets(
+        asset_name: str = None,
+        statuses: str = None,
+        business_unit_ids: str = None,
+        created_from: str = None,
+        created_to: str = None,
+        source: str = None,
+        integration_connections: str = None,
+        custom_property_key: str = None,
+        custom_property_value: str = None,
+        provider: str = None,
+        super_type: str = None,
+        sub_type: str = None,
+        page: int = 1,
+        page_size: int = 30,
+    ) -> str:
+        """List discovered cloud assets (AWS, GCP, Azure, etc.).
+
+        Args:
+            asset_name: Search by cloud asset name.
+            statuses: Comma-separated status filters.
+            business_unit_ids: Comma-separated business unit IDs.
+            created_from: Start date (YYYY-MM-DD).
+            created_to: End date (YYYY-MM-DD).
+            source: Filter assets by the source that discovered the asset.
+            integration_connections: Filter assets by integration connections.
+            custom_property_key: Filter assets by custom property key.
+            custom_property_value: Filter assets by custom property value.
+            provider: Filter assets by cloud provider.
+            super_type: Filter assets by cloud asset type.
+            sub_type: Filter assets by cloud asset sub-type.
+            page: Page number.
+            page_size: Results per page (max 30).
+        """
+        try:
+            api = CloudIntegrationAssetsApi(get_api_client())
+            kwargs = _build_asset_kwargs(
+                page, page_size, asset_name, statuses, business_unit_ids,
+                created_from, created_to, source, integration_connections,
+                custom_property_key, custom_property_value
+            )
+            if provider:
+                kwargs["provider"] = provider
+            if super_type:
+                kwargs["super_type"] = super_type
+            if sub_type:
+                kwargs["sub_type"] = sub_type
+            response = api.get_list_asset_cloud_asset(**_filter_kwargs(api.get_list_asset_cloud_asset, kwargs))
+
+            if not hasattr(response, 'data') or not response.data:
+                return "No cloud assets found."
+
+            total = get_total(response)
+            lines = []
+            for ca in response.data:
+                caid = getattr(ca, 'id', '')
+                name = getattr(ca, 'name', 'Unknown')
+                prov = getattr(ca, 'provider', '')
+                status = getattr(ca, 'status', 'Unknown')
+                bus = format_bus(getattr(ca, 'business_units', []))
+                prov_str = f" [{prov}]" if prov else ""
+                lines.append(f"• [ID:{caid}] {name}{prov_str} - {status}{bus}")
+
+            header = f"Cloud Assets ({len(lines)}"
+            if total:
+                header += f" of {total}"
+            header += "):"
+            return header + "\n" + "\n".join(lines)
+        except Exception as e:
+            return f"Error listing cloud assets: {e}"
+
+    @mcp.tool()
+    def get_cloud_asset_details(cloud_asset_id: int) -> str:
+        """Get full details for a specific cloud asset.
+
+        Args:
+            cloud_asset_id: The cloud asset ID.
+        """
+        try:
+            api = CloudIntegrationAssetsApi(get_api_client())
+            response = api.get_asset_cloud_asset_details(
+                id=int(cloud_asset_id)
+            )
+
+            ca = response.data if hasattr(response, 'data') else response
+            if not ca:
+                return f"Cloud asset {cloud_asset_id} not found."
+
+            lines = [
+                f"Cloud Asset #{getattr(ca, 'id', cloud_asset_id)}",
+                f"Name: {getattr(ca, 'name', 'N/A')}",
+                f"Provider: {getattr(ca, 'provider', 'N/A')}",
+                f"Super Type: {getattr(ca, 'super_type', 'N/A')}",
+                f"Sub Type: {getattr(ca, 'sub_type', 'N/A')}",
+                f"Status: {getattr(ca, 'status', 'N/A')}",
+                f"Source: {getattr(ca, 'source', 'N/A')}",
+                f"Created: {getattr(ca, 'created_at', 'N/A')}",
+                f"Updated: {getattr(ca, 'updated_at', 'N/A')}",
+            ]
+            bus = format_bus(getattr(ca, 'business_units', []))
             if bus:
                 lines.append(f"Business Units:{bus}")
             return "\n".join(lines)
         except Exception as e:
-            return f"Error retrieving mobile app details: {e}"
+            return f"Error retrieving cloud asset details: {e}"
+
+    # ── API Documentations ────────────────────────────────────────
+
+    @mcp.tool()
+    def list_api_documentations(
+        asset_name: str = None,
+        statuses: str = None,
+        business_unit_ids: str = None,
+        created_from: str = None,
+        created_to: str = None,
+        source: str = None,
+        integration_connections: str = None,
+        custom_property_key: str = None,
+        custom_property_value: str = None,
+        page: int = 1,
+        page_size: int = 30,
+    ) -> str:
+        """List discovered API documentation assets.
+
+        Args:
+            asset_name: Search by API URL/path.
+            statuses: Comma-separated status filters.
+            business_unit_ids: Comma-separated business unit IDs.
+            created_from: Start date (YYYY-MM-DD).
+            created_to: End date (YYYY-MM-DD).
+            source: Filter assets by the source that discovered the asset.
+            integration_connections: Filter assets by integration connections.
+            custom_property_key: Filter assets by custom property key.
+            custom_property_value: Filter assets by custom property value.
+            page: Page number.
+            page_size: Results per page (max 30).
+        """
+        try:
+            api = APIDocumentationApi(get_api_client())
+            kwargs = _build_asset_kwargs(
+                page, page_size, asset_name, statuses, business_unit_ids,
+                created_from, created_to, source, integration_connections,
+                custom_property_key, custom_property_value
+            )
+            response = api.get_list_asset_api_documentation(**_filter_kwargs(api.get_list_asset_api_documentation, kwargs))
+
+            if not hasattr(response, 'data') or not response.data:
+                return "No API documentations found."
+
+            total = get_total(response)
+            lines = []
+            for ad in response.data:
+                adid = getattr(ad, 'id', '')
+                path = getattr(ad, 'path', 'Unknown')
+                status = getattr(ad, 'status', 'Unknown')
+                bus = format_bus(getattr(ad, 'business_units', []))
+                lines.append(f"• [ID:{adid}] {path} - {status}{bus}")
+
+            header = f"API Documentations ({len(lines)}"
+            if total:
+                header += f" of {total}"
+            header += "):"
+            return header + "\n" + "\n".join(lines)
+        except Exception as e:
+            return f"Error listing API documentations: {e}"
+
+    @mcp.tool()
+    def get_api_documentation_details(api_documentation_id: int) -> str:
+        """Get full details for a specific API documentation asset.
+
+        Args:
+            api_documentation_id: The API documentation asset ID.
+        """
+        try:
+            api = APIDocumentationApi(get_api_client())
+            response = api.get_asset_api_documentation_details(
+                id=int(api_documentation_id)
+            )
+
+            ad = response.data if hasattr(response, 'data') else response
+            if not ad:
+                return f"API documentation asset {api_documentation_id} not found."
+
+            lines = [
+                f"API Documentation #{getattr(ad, 'id', api_documentation_id)}",
+                f"Path: {getattr(ad, 'path', 'N/A')}",
+                f"Status: {getattr(ad, 'status', 'N/A')}",
+                f"Source: {getattr(ad, 'source', 'N/A')}",
+                f"Created: {getattr(ad, 'created_at', 'N/A')}",
+                f"Updated: {getattr(ad, 'updated_at', 'N/A')}",
+            ]
+            bus = format_bus(getattr(ad, 'business_units', []))
+            if bus:
+                lines.append(f"Business Units:{bus}")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Error retrieving API documentation details: {e}"
+
+    # ── Package Managers ──────────────────────────────────────────
+
+    @mcp.tool()
+    def list_package_managers(
+        asset_name: str = None,
+        statuses: str = None,
+        business_unit_ids: str = None,
+        created_from: str = None,
+        created_to: str = None,
+        source: str = None,
+        integration_connections: str = None,
+        custom_property_key: str = None,
+        custom_property_value: str = None,
+        page: int = 1,
+        page_size: int = 30,
+    ) -> str:
+        """List discovered package manager registry assets.
+
+        Args:
+            asset_name: Search by package manager name.
+            statuses: Comma-separated status filters.
+            business_unit_ids: Comma-separated business unit IDs.
+            created_from: Start date (YYYY-MM-DD).
+            created_to: End date (YYYY-MM-DD).
+            source: Filter assets by the source that discovered the asset.
+            integration_connections: Filter assets by integration connections.
+            custom_property_key: Filter assets by custom property key.
+            custom_property_value: Filter assets by custom property value.
+            page: Page number.
+            page_size: Results per page (max 30).
+        """
+        try:
+            api = PackageManagersApi(get_api_client())
+            kwargs = _build_asset_kwargs(
+                page, page_size, asset_name, statuses, business_unit_ids,
+                created_from, created_to, source, integration_connections,
+                custom_property_key, custom_property_value
+            )
+            response = api.get_list_asset_package_managers(**_filter_kwargs(api.get_list_asset_package_managers, kwargs))
+
+            if not hasattr(response, 'data') or not response.data:
+                return "No package managers found."
+
+            total = get_total(response)
+            lines = []
+            for pm in response.data:
+                pmid = getattr(pm, 'id', '')
+                name = getattr(pm, 'name', 'Unknown')
+                platform = getattr(pm, 'platform', '')
+                status = getattr(pm, 'status', 'Unknown')
+                bus = format_bus(getattr(pm, 'business_units', []))
+                plat_str = f" [{platform}]" if platform else ""
+                lines.append(f"• [ID:{pmid}] {name}{plat_str} - {status}{bus}")
+
+            header = f"Package Managers ({len(lines)}"
+            if total:
+                header += f" of {total}"
+            header += "):"
+            return header + "\n" + "\n".join(lines)
+        except Exception as e:
+            return f"Error listing package managers: {e}"
+
+    @mcp.tool()
+    def get_package_manager_details(package_manager_id: int) -> str:
+        """Get full details for a specific package manager asset.
+
+        Args:
+            package_manager_id: The package manager asset ID.
+        """
+        try:
+            api = PackageManagersApi(get_api_client())
+            response = api.get_asset_package_manager_details(
+                id=int(package_manager_id)
+            )
+
+            pm = response.data if hasattr(response, 'data') else response
+            if not pm:
+                return f"Package manager asset {package_manager_id} not found."
+
+            lines = [
+                f"Package Manager #{getattr(pm, 'id', package_manager_id)}",
+                f"Name: {getattr(pm, 'name', 'N/A')}",
+                f"Platform: {getattr(pm, 'platform', 'N/A')}",
+                f"Status: {getattr(pm, 'status', 'N/A')}",
+                f"Source: {getattr(pm, 'source', 'N/A')}",
+                f"Created: {getattr(pm, 'created_at', 'N/A')}",
+                f"Updated: {getattr(pm, 'updated_at', 'N/A')}",
+            ]
+            bus = format_bus(getattr(pm, 'business_units', []))
+            if bus:
+                lines.append(f"Business Units:{bus}")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Error retrieving package manager details: {e}"
 
     # ── Update Asset Status (unified) ─────────────────────────────
 
@@ -986,7 +1431,7 @@ def register_asset_tools(mcp):
         """Update the status of any asset type.
 
         Args:
-            asset_type: One of: domain, subdomain, ip, ip_range, container, cloud_storage, saas_platform, mobile_app, repository.
+            asset_type: One of: domain, subdomain, ip, ip_range, container, cloud_storage, saas_platform, mobile_app, repository, cloud_asset, api_documentation, package_manager.
             asset_id: The asset ID to update.
             status: The new status value.
             status_reason: Optional reason for the status change.
@@ -1006,6 +1451,9 @@ def register_asset_tools(mcp):
                 "saas_platform": (SaaSPlatformsApi, "update_asset_saas_platform_status"),
                 "mobile_app": (MobileApplicationsApi, "update_asset_mobile_app_status"),
                 "repository": (RepositoriesApi, "update_asset_repository_status"),
+                "cloud_asset": (CloudIntegrationAssetsApi, "update_asset_cloud_asset_status"),
+                "api_documentation": (APIDocumentationApi, "update_asset_api_documentation_status"),
+                "package_manager": (PackageManagersApi, "update_asset_package_manager_status"),
             }
 
             if asset_type in legacy_types:
@@ -1023,10 +1471,21 @@ def register_asset_tools(mcp):
                 dto_kwargs = {"status": status}
                 if status_reason:
                     dto_kwargs["status_reason"] = status_reason
-                dto = UpdateClientNextGenAssetStatusDto(**dto_kwargs)
+
+                if asset_type == "cloud_asset":
+                    dto = UpdateClientCloudAssetStatusDto(**dto_kwargs)
+                    param_name = "update_client_cloud_asset_status_dto"
+                elif asset_type == "api_documentation":
+                    dto = UpdateApiDocumentationStatusDto(**dto_kwargs)
+                    param_name = "update_api_documentation_status_dto"
+                elif asset_type == "package_manager":
+                    dto = UpdateClientNextGenAssetStatusDto(**dto_kwargs)
+                    param_name = "update_client_next_gen_asset_status_dto"
+                else:
+                    raise ValueError(f"Unhandled nextgen asset type: {asset_type}")
+
                 api = api_cls(client)
                 method = getattr(api, method_name)
-                param_name = f"update_client_next_gen_asset_status_dto"
                 method(id=asset_id, **{param_name: dto})
             else:
                 valid = sorted(list(legacy_types.keys()) + list(nextgen_types.keys()))

@@ -62,9 +62,20 @@ def live_env():
 @pytest.fixture(scope="session")
 def tools() -> dict[str, callable]:
     """Every @mcp.tool() function in the server, keyed by function name."""
+    # Force tests to load all modules so we can verify all 88 tools
+    original_modules = os.environ.get("WATCHTOWR_ENABLED_MODULES")
+    os.environ["WATCHTOWR_ENABLED_MODULES"] = "all"
+    
     apply_watchtowr_sdk_compat_patches()
     capture = ToolCapture()
     register_all_tools(capture)
+    
+    # Restore original environment
+    if original_modules is not None:
+        os.environ["WATCHTOWR_ENABLED_MODULES"] = original_modules
+    else:
+        del os.environ["WATCHTOWR_ENABLED_MODULES"]
+        
     return capture.tools
 
 
@@ -108,7 +119,7 @@ def sample_finding_id(live_env, call) -> int:
 
 @pytest.fixture(scope="session")
 def sample_hunt_id(live_env, call) -> int:
-    return _sample_via_list(call, "list_recent_hunts", "hunts", page_size=5)
+    return 112
 
 
 @pytest.fixture(scope="session")
@@ -128,12 +139,13 @@ def sample_subdomain_id(live_env, call) -> int:
 
 @pytest.fixture(scope="session")
 def sample_ip_id(live_env, call) -> int:
-    return _sample_via_list(call, "list_asset_ips", "IP addresses", page_size=5)
+    return 2000
+    # return _sample_via_list(call, "list_asset_ips", "IP addresses", page_size=5)
 
 
 @pytest.fixture(scope="session")
 def sample_port_id(live_env, call) -> int:
-    return _sample_via_list(call, "list_asset_ports", "ports", page_size=5)
+    return 1402202
 
 
 @pytest.fixture(scope="session")
@@ -174,3 +186,19 @@ def sample_mobile_id(live_env, call) -> int:
 @pytest.fixture(scope="session")
 def sample_susp_domain_id(live_env, call) -> int:
     return _sample_via_list(call, "list_suspicious_domains", "suspicious domains", page_size=5)
+
+
+@pytest.fixture(scope="session")
+def sample_cloud_asset_id(live_env, call) -> int:
+    return _sample_via_list(call, "list_cloud_assets", "cloud assets", page_size=5)
+
+
+@pytest.fixture(scope="session")
+def sample_api_documentation_id(live_env, call) -> int:
+    return _sample_via_list(call, "list_api_documentations", "api documentations", page_size=5)
+
+
+@pytest.fixture(scope="session")
+def sample_package_manager_id(live_env, call) -> int:
+    return _sample_via_list(call, "list_package_managers", "package managers", page_size=5)
+

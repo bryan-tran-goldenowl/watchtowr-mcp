@@ -92,6 +92,21 @@ def register_findings_tools(mcp):
             lines.append(f"Severity: {severity_display(getattr(finding, 'severity', None))}")
             lines.append(f"Status: {getattr(finding, 'status', 'N/A')}")
 
+            state = getattr(finding, 'state', None)
+            lines.append(f"State: {state}")
+
+            age = getattr(finding, 'age', None)
+            lines.append(f"Age: {age} days" if age is not None else "Age: None")
+
+            criticality = getattr(finding, 'criticality', None)
+            lines.append(f"Criticality: {criticality}")
+
+            last_seen = getattr(finding, 'last_seen', None)
+            lines.append(f"Last Seen: {last_seen}")
+
+            detection_rules = getattr(finding, 'detection_rules', None)
+            lines.append(f"Detection Rules: {detection_rules}")
+
             cvss = getattr(finding, 'cvssv3_score', None)
             if cvss is not None:
                 lines.append(f"CVSS v3: {cvss}")
@@ -151,6 +166,8 @@ def register_findings_tools(mcp):
         finding_impact_threshold: str = None,
         created_from: str = None,
         created_to: str = None,
+        only_validated_exploitable: bool = None,
+        exploitation_risk_level: str = None,
         page: int = 1,
         page_size: int = 30,
     ) -> str:
@@ -168,6 +185,8 @@ def register_findings_tools(mcp):
             finding_impact_threshold: Impact setting - "High" for prioritised findings or "All" for broader range.
             created_from: Start date (YYYY-MM-DD).
             created_to: End date (YYYY-MM-DD).
+            only_validated_exploitable: Filter to only show findings validated as exploitable.
+            exploitation_risk_level: Filter by comma-separated risk levels.
             page: Page number (default 1).
             page_size: Results per page (max 30).
         """
@@ -196,6 +215,10 @@ def register_findings_tools(mcp):
                 kwargs["created_from"] = parse_date(created_from)
             if created_to:
                 kwargs["created_to"] = parse_date(created_to)
+            if only_validated_exploitable is not None:
+                kwargs["only_validated_exploitable"] = only_validated_exploitable
+            if exploitation_risk_level:
+                kwargs["exploitation_risk_level"] = exploitation_risk_level
 
             response = api.get_list_findings(**kwargs)
 
@@ -355,3 +378,25 @@ def register_findings_tools(mcp):
             return f"PDF export initiated for finding {finding_id}. Check the watchTowr Platform for the download."
         except Exception as e:
             return f"Error exporting finding PDF: {e}"
+
+    @mcp.tool()
+    def update_finding_state(finding_id: int, state: str) -> str:
+        """Update the handling state of a finding (e.g. Uninvestigated, In Progress, Completed).
+
+        Args:
+            finding_id: The finding ID to update.
+            state: The new state value ('Uninvestigated', 'In Progress', 'Completed').
+        """
+        try:
+            from watchtowr_api_sdk.models.update_client_finding_state_request_body import UpdateClientFindingStateRequestBody
+            api = FindingsApi(get_api_client())
+            body = UpdateClientFindingStateRequestBody(state=state)
+            response = api.update_finding_state(
+                id=finding_id,
+                update_client_finding_state_request_body=body,
+            )
+            finding = response.data if hasattr(response, 'data') else response
+            new_state = getattr(finding, 'state', state) if finding else state
+            return f"Finding {finding_id} state updated to: {new_state}"
+        except Exception as e:
+            return f"Error updating finding state: {e}"

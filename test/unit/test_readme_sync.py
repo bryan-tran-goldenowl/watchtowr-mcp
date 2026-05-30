@@ -20,8 +20,8 @@ TOOLS_DIR = REPO_ROOT / "watchtowr_mcp_server" / "tools"
 # The README also tells us the expected count per category — keep these
 # pairs in lockstep with the README headings.
 CATEGORY_MAP = {
-    "Findings": ("findings.py", 10),
-    "Assets": ("assets.py", 24),
+    "Findings": ("findings.py", 11),
+    "Assets": ("assets.py", 30),
     "Hunts": ("hunts.py", 6),
     "Threat Intelligence": ("threat_intel.py", 6),
     "Services": ("services.py", 2),
@@ -93,7 +93,7 @@ def test_category_tool_count_matches_readme_heading(category, filename, expected
     )
 
 
-def test_total_tool_count_is_88():
-    """README.md line 7 claims '88 tools'."""
+def test_total_tool_count_is_95():
+    """README.md line 7 claims '95 tools'."""
     total = sum(len(_tool_names_in_file(TOOLS_DIR / fn)) for fn, _ in CATEGORY_MAP.values())
-    assert total == 88, f"Expected 88 tools across all categories, found {total}"
+    assert total == 95, f"Expected 95 tools across all categories, found {total}"

@@ -24,7 +24,7 @@ def test_update_asset_status_domain_roundtrip(live_env, call, sample_domain_id):
         "update_asset_status",
         asset_type="domain",
         asset_id=sample_domain_id,
-        status="In Scope",
+        status="verified",
     )
     assert_ok(response)
 
@@ -42,5 +42,28 @@ def test_add_seed_asset_with_invalid_tld(live_env, call):
         asset_value=marker,
         asset_title=marker,
     )
+    # The API now strictly validates TLDs and will reject .invalid with HTTP 400
+    assert response.startswith("Error"), f"expected an error for invalid domain but got: {response!r}"
+    assert "400" in response, f"expected 400 Bad Request, got: {response!r}"
+    assert "Invalid domain" in response, f"expected 'Invalid domain' message, got: {response!r}"
+
+
+def test_update_asset_status_api_doc_roundtrip(live_env, call, sample_api_documentation_id):
+    response = call(
+        "update_asset_status",
+        asset_type="api_documentation",
+        asset_id=sample_api_documentation_id,
+        status="verified",
+    )
     assert_ok(response)
-    assert marker in response, f"response did not echo back the seed value: {response!r}"
+
+
+def test_update_asset_status_package_manager_roundtrip(live_env, call, sample_package_manager_id):
+    response = call(
+        "update_asset_status",
+        asset_type="package_manager",
+        asset_id=sample_package_manager_id,
+        status="verified",
+    )
+    assert_ok(response)
+

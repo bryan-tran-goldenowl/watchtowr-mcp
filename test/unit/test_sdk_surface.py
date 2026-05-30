@@ -32,8 +32,9 @@ SDK_CALLS = [
     ("watchtowr_api_sdk.api.findings_api", "FindingsApi", "get_finding_details"),
     ("watchtowr_api_sdk.api.findings_api", "FindingsApi", "update_finding_status"),
     ("watchtowr_api_sdk.api.findings_api", "FindingsApi", "start_specific_finding_retest"),
-    ("watchtowr_api_sdk.api.findings_api", "FindingsApi", "get_available_finding_statuses_with_http_info"),
+    ("watchtowr_api_sdk.api.findings_api", "FindingsApi", "get_available_finding_statuses"),
     ("watchtowr_api_sdk.api.findings_api", "FindingsApi", "export_pdf_for_finding"),
+    ("watchtowr_api_sdk.api.findings_api", "FindingsApi", "update_finding_state"),
     # Hunts
     ("watchtowr_api_sdk.api.hunts_api", "HuntsApi", "get_client_hunts"),
     ("watchtowr_api_sdk.api.hunts_api", "HuntsApi", "show_the_detail_hunt"),
@@ -48,6 +49,7 @@ SDK_CALLS = [
     ("watchtowr_api_sdk.api.source_ip_addresses_api", "SourceIPAddressesApi", "get_list_source_ip_addresses"),
     # Service listing
     ("watchtowr_api_sdk.api.service_discovery_api", "ServiceDiscoveryApi", "get_list_service_listing"),
+    ("watchtowr_api_sdk.api.service_discovery_api", "ServiceDiscoveryApi", "get_technology_statistics"),
     # Asset IPs
     ("watchtowr_api_sdk.api.ip_addresses_api", "IPAddressesApi", "get_list_asset_ips"),
     ("watchtowr_api_sdk.api.ip_addresses_api", "IPAddressesApi", "get_asset_ip_details"),
@@ -99,7 +101,20 @@ SDK_CALLS = [
     # Certificates
     ("watchtowr_api_sdk.api.certificates_api", "CertificatesApi", "get_list_certificates"),
     ("watchtowr_api_sdk.api.certificates_api", "CertificatesApi", "get_certificate_details"),
+    # API Documentation
+    ("watchtowr_api_sdk.api.api_documentation_api", "APIDocumentationApi", "get_asset_api_documentation_details"),
+    ("watchtowr_api_sdk.api.api_documentation_api", "APIDocumentationApi", "get_list_asset_api_documentation"),
+    ("watchtowr_api_sdk.api.api_documentation_api", "APIDocumentationApi", "update_asset_api_documentation_status"),
+    # Cloud Integration Assets
+    ("watchtowr_api_sdk.api.cloud_integration_assets_api", "CloudIntegrationAssetsApi", "get_asset_cloud_asset_details"),
+    ("watchtowr_api_sdk.api.cloud_integration_assets_api", "CloudIntegrationAssetsApi", "get_list_asset_cloud_asset"),
+    ("watchtowr_api_sdk.api.cloud_integration_assets_api", "CloudIntegrationAssetsApi", "update_asset_cloud_asset_status"),
+    # Package Managers
+    ("watchtowr_api_sdk.api.package_managers_api", "PackageManagersApi", "get_asset_package_manager_details"),
+    ("watchtowr_api_sdk.api.package_managers_api", "PackageManagersApi", "get_list_asset_package_managers"),
+    ("watchtowr_api_sdk.api.package_managers_api", "PackageManagersApi", "update_asset_package_manager_status"),
 ]
+
 
 
 MODEL_IMPORTS = [
@@ -139,10 +154,11 @@ def test_sdk_infra_resolves(module, cls):
 
 def test_sdk_call_count_matches_expectation():
     """If this fails, the SDK_CALLS list and the MCP source have drifted."""
-    assert len(SDK_CALLS) == 52, (
-        "Expected 52 distinct SDK (class, method) call sites. Update both this "
+    assert len(SDK_CALLS) == 63, (
+        "Expected 63 distinct SDK (class, method) call sites. Update both this "
         "constant and SDK_CALLS when you add/remove an SDK call in the MCP tools."
     )
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
