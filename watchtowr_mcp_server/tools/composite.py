@@ -17,7 +17,7 @@ from watchtowr_api_sdk.api.saa_s_platforms_api import SaaSPlatformsApi
 from watchtowr_api_sdk.api.mobile_applications_api import MobileApplicationsApi
 from watchtowr_api_sdk.api.points_of_interest_api import PointsOfInterestApi
 
-from ..client import get_api_client, get_total, parse_date, format_bus, severity_display
+from ..client import get_api_client, get_total, parse_date, format_bus, severity_display, supported_kwargs
 from ..constants import SUMMARY_SEVERITIES
 
 
@@ -38,7 +38,8 @@ _ASSET_API_MAP = [
 def _count(api_instance, method_name, **kwargs):
     """Call a list method with page_size=1 and extract the total count."""
     method = getattr(api_instance, method_name)
-    response = method(page_size=1, **kwargs)
+    safe = supported_kwargs(method, kwargs)
+    response = method(page_size=1, **safe)
     return get_total(response) or (len(response.data) if hasattr(response, 'data') and response.data else 0)
 
 
