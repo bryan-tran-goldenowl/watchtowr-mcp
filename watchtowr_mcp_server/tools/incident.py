@@ -39,7 +39,7 @@ def register_incident_tools(mcp):
             if hasattr(svc_resp, 'data') and svc_resp.data:
                 lines.append(f"Services ({svc_total}):")
                 for s in svc_resp.data:
-                    ip = getattr(s, 'ip', 'Unknown')
+                    ip = getattr(s, 'ip', None) or getattr(s, 'hostname', None) or 'Unknown'
                     port = getattr(s, 'port', '?')
                     service = getattr(s, 'service', '')
                     svc_str = f" ({service})" if service else ""
@@ -102,7 +102,7 @@ def register_incident_tools(mcp):
 
             lines = [f"Services Running '{technology_search}' ({total or len(resp.data)} total):", ""]
             for s in resp.data:
-                ip = getattr(s, 'ip', 'Unknown')
+                ip = getattr(s, 'ip', None) or getattr(s, 'hostname', None) or 'Unknown'
                 port = getattr(s, 'port', '?')
                 service = getattr(s, 'service', '')
                 country = getattr(s, 'country', '')
@@ -272,7 +272,7 @@ def register_incident_tools(mcp):
                         if hasattr(svc_resp, 'data') and svc_resp.data:
                             lines.append(f"\nServices:")
                             for s in svc_resp.data:
-                                ip = getattr(s, 'ip', 'Unknown')
+                                ip = getattr(s, 'ip', None) or getattr(s, 'hostname', None) or 'Unknown'
                                 port = getattr(s, 'port', '?')
                                 service = getattr(s, 'service', '')
                                 lines.append(f"  • {ip}:{port} ({service})")
