@@ -145,10 +145,16 @@ _MAP_KWARGS = ["statuses", "business_unit_ids", "created_from", "created_to", "p
 def test_asset_map_methods_accept_common_kwargs(label, cls, method_name):
     fn = getattr(cls, method_name)
     params = {p for p in inspect.signature(fn).parameters if p != "self"}
-    unsupported = [kw for kw in _MAP_KWARGS if kw not in params]
+    # Known per-endpoint exceptions handled by _supported_kwargs in
+    # reporting.py / composite.py (the kwarg is filtered out before the call).
+    KNOWN_UNSUPPORTED = {("Ports", "statuses")}
+    unsupported = [
+        kw for kw in _MAP_KWARGS
+        if kw not in params and (label, kw) not in KNOWN_UNSUPPORTED
+    ]
     assert not unsupported, (
-        f"{label} ({cls.__name__}.{method_name}) does not accept {unsupported}. "
-        f"reporting.py/composite.py pass these to every map entry; the call is "
-        f"silently swallowed by try/except. Either drop the kwarg for this endpoint "
-        f"or sanitize per-endpoint."
+        f"{label} ({cls.__name__}.{method_name}) does not accept {unsupported} "
+        f"and it is not in KNOWN_UNSUPPORTED. Add per-endpoint sanitization via "
+        f"_supported_kwargs in reporting.py/composite.py and document the "
+        f"exception here."
     )

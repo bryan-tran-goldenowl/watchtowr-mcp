@@ -1,3 +1,5 @@
+import inspect
+import typing
 from datetime import datetime, timedelta
 
 from watchtowr_api_sdk.api.findings_api import FindingsApi
@@ -32,9 +34,49 @@ _ASSET_API_MAP = [
 ]
 
 
+def _expects_list(annotation) -> bool:
+    """True if a parameter annotation ultimately wraps a list type.
+
+    Asset list endpoints type `statuses` as Optional[List[str]] while the
+    findings/certificates endpoints type the same filter as a comma-separated
+    str. Inspect the annotation so a single helper can target both.
+    """
+    for sub in [annotation, *typing.get_args(annotation)]:
+        origin = typing.get_origin(sub)
+        if origin in (list, typing.List):
+            return True
+        # recurse one level into Optional/Annotated wrappers
+        for arg in typing.get_args(sub):
+            if typing.get_origin(arg) in (list, typing.List):
+                return True
+    return False
+
+
+def _supported_kwargs(method, kwargs: dict) -> dict:
+    """Drop kwargs the SDK method doesn't declare and coerce list-typed ones.
+
+    Asset list endpoints share most filters but differ on a few (e.g. PortsApi
+    has no `statuses`) and on the *type* expected (asset endpoints want
+    List[str] for `statuses`/`business_unit_ids`, findings/certs want a
+    comma-separated str). Filtering + coercing here lets a single call site
+    target every endpoint without crashing on the ones that disagree.
+    """
+    params = inspect.signature(method).parameters
+    out = {}
+    for k, v in kwargs.items():
+        if k not in params:
+            continue
+        if isinstance(v, str) and _expects_list(params[k].annotation):
+            out[k] = [part.strip() for part in v.split(",") if part.strip()]
+        else:
+            out[k] = v
+    return out
+
+
 def _count(api_instance, method_name, **kwargs):
     method = getattr(api_instance, method_name)
-    response = method(page_size=1, **kwargs)
+    safe = _supported_kwargs(method, kwargs)
+    response = method(page_size=1, **safe)
     return get_total(response) or (len(response.data) if hasattr(response, 'data') and response.data else 0)
 
 
@@ -69,7 +111,9 @@ def register_reporting_tools(mcp):
                 try:
                     api = api_cls(client)
                     method = getattr(api, method_name)
-                    response = method(business_unit_ids=business_unit_id, page_size=5)
+                    response = method(**_supported_kwargs(
+                        method, {"business_unit_ids": business_unit_id, "page_size": 5}
+                    ))
                     count = get_total(response) or (len(response.data) if hasattr(response, 'data') and response.data else 0)
 
                     if count > 0:
@@ -104,7 +148,9 @@ def register_reporting_tools(mcp):
                 try:
                     api = api_cls(client)
                     method = getattr(api, method_name)
-                    response = method(statuses="VerifiedOutOfScope,Incorrect Identification", page_size=10)
+                    response = method(**_supported_kwargs(
+                        method, {"statuses": "VerifiedOutOfScope,Incorrect Identification", "page_size": 10}
+                    ))
                     count = get_total(response) or (len(response.data) if hasattr(response, 'data') and response.data else 0)
 
                     if count > 0:
