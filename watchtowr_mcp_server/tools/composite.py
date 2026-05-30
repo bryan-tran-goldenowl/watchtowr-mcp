@@ -366,8 +366,10 @@ def register_composite_tools(mcp):
             cert_api = CertificatesApi(client)
             svc_api = ServiceDiscoveryApi(client)
 
-            expiry_cutoff = datetime.now() + timedelta(days=days)
+            now = datetime.now()
+            expiry_cutoff = now + timedelta(days=days)
             cert_response = cert_api.get_list_certificates(
+                not_after_from=now,
                 not_after_to=expiry_cutoff,
                 page_size=30,
             )
@@ -378,25 +380,31 @@ def register_composite_tools(mcp):
             cert_total = get_total(cert_response)
             lines = [f"Certificates Expiring Within {days} Days ({cert_total or len(cert_response.data)}):", ""]
 
-            # Collect hostnames from certs for service cross-reference
+            # Collect hostnames from certs for service cross-reference.
+            # The list item is ServiceInformationResponse: cert fields are nested
+            # under .certificate, the owning asset under .asset.
             cert_hosts = set()
-            for cert in cert_response.data:
-                cn = getattr(cert, 'common_name', '') or ''
-                subject = getattr(cert, 'subject', '') or ''
-                valid_to = getattr(cert, 'valid_to', 'N/A')
-                issuer = getattr(cert, 'issuer', '')
-                bus = format_bus(getattr(cert, 'business_units', []))
+            for item in cert_response.data:
+                cert = getattr(item, 'certificate', None)
+                asset = getattr(item, 'asset', None)
+                cn = (getattr(cert, 'subject_common_name', '') if cert else '') or ''
+                issuer = (getattr(cert, 'issuer_organisation', '') if cert else '') or ''
+                asset_name = (getattr(asset, 'name', '') if asset else '') or ''
+                bus = format_bus(getattr(asset, 'business_units', []) if asset else [])
 
-                lines.append(f"• {cn or subject}")
-                lines.append(f"  Expires: {valid_to}")
+                lines.append(f"• {cn or asset_name or 'Unknown'}")
                 if issuer:
                     lines.append(f"  Issuer: {issuer}")
+                if asset_name:
+                    lines.append(f"  Asset: {asset_name}")
                 if bus:
                     lines.append(f"  {bus}")
                 lines.append("")
 
                 if cn:
                     cert_hosts.add(cn.lstrip("*."))
+                if asset_name:
+                    cert_hosts.add(asset_name.lstrip("*."))
 
             # Cross-reference with services
             if cert_hosts:
@@ -406,12 +414,19 @@ def register_composite_tools(mcp):
                     if hasattr(svc_response, 'data') and svc_response.data:
                         matched = []
                         for svc in svc_response.data:
-                            svc_name = getattr(svc, 'name', '') or ''
-                            svc_host = getattr(svc, 'host', '') or ''
-                            if any(h in svc_name or h in svc_host for h in cert_hosts):
-                                tech = getattr(svc, 'technology', '')
+                            svc_host = getattr(svc, 'hostname', '') or ''
+                            svc_ip = getattr(svc, 'ip', '') or ''
+                            haystack = f"{svc_host} {svc_ip}"
+                            if any(h and h in haystack for h in cert_hosts):
+                                service = getattr(svc, 'service', '') or ''
                                 port = getattr(svc, 'port', '')
-                                matched.append(f"• {svc_host}:{port} ({tech}) - {svc_name}")
+                                techs = getattr(svc, 'technologies', []) or []
+                                tech_names = [
+                                    getattr(t, 'display_name', getattr(t, 'name', '')) for t in techs
+                                ]
+                                tech_str = f" [{', '.join(tn for tn in tech_names if tn)}]" if tech_names else ""
+                                label_host = svc_host or svc_ip
+                                matched.append(f"• {label_host}:{port} ({service}){tech_str}")
                         if matched:
                             lines.extend(matched)
                         else:

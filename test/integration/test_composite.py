@@ -30,7 +30,13 @@ def test_get_finding_with_asset_context(live_env, call, sample_finding_id):
 
 
 def test_get_expiring_certificates_with_services(live_env, call):
-    assert_ok(call("get_expiring_certificates_with_services", days=30), allow_empty=True)
+    resp = call("get_expiring_certificates_with_services", days=30)
+    assert_ok(resp, allow_empty=True)
+    # Regression guard for BUG-2: cert entries must not render as bare empty
+    # bullets (the old top-level field access produced "• " with no CN/asset).
+    for line in resp.splitlines():
+        if line.startswith("• "):
+            assert line.strip() != "•", "expiring cert rendered with no common-name/asset (field drift)"
 
 
 def test_get_hunt_remediation_list(live_env, call, sample_hunt_id):
