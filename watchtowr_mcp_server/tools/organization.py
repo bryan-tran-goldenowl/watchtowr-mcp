@@ -100,7 +100,8 @@ def register_organization_tools(mcp):
             if search:
                 kwargs["search"] = search
             if types:
-                kwargs["types"] = [t.strip() for t in types.split(",")]
+                # SDK types this as a comma-separated string (not a list).
+                kwargs["types"] = types
             if user_ids:
                 kwargs["user_ids"] = [u.strip() for u in user_ids.split(",")]
             if created_from:

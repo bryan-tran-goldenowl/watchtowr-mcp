@@ -21,6 +21,13 @@ def test_search_activity_logs(live_env, call):
     assert_ok(call("search_activity_logs", page_size=5), allow_empty=True)
 
 
+def test_search_activity_logs_with_type_filter(live_env, call):
+    """Regression for BUG-4: SDK types `types` as a comma-separated string, not a
+    list. Passing a type filter must not raise a pydantic validation error."""
+    resp = call("search_activity_logs", types="Successful Login", page_size=5)
+    assert_ok(resp, allow_empty=True)
+
+
 def test_list_business_units(live_env, call):
     assert_ok(call("list_business_units"), allow_empty=True)
 
