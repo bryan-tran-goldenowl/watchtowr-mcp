@@ -142,7 +142,8 @@ def register_threat_intel_tools(mcp):
             if search:
                 kwargs["search"] = search
             if types:
-                kwargs["types"] = types
+                # SDK types this as List[str] (comma-separated input → list).
+                kwargs["types"] = [t.strip() for t in types.split(",") if t.strip()]
             if has_finding is not None:
                 kwargs["has_finding"] = has_finding
             if business_unit_ids:
