@@ -106,3 +106,49 @@ def test_call_site_kwargs_match_sdk_signatures():
                     f"but signature only accepts {sorted(params)}"
                 )
     assert not problems, "Kwarg drift between MCP tools and SDK:\n" + "\n".join(problems)
+
+
+# ── Dynamic dispatch table guard ──────────────────────────────────────────────
+# reporting.py / composite.py / workflow.py share an _ASSET_API_MAP and call every
+# entry with a common set of kwargs. getattr-based dispatch hides this from the AST
+# walk above, so assert the contract explicitly here.
+
+from watchtowr_api_sdk.api.ip_addresses_api import IPAddressesApi
+from watchtowr_api_sdk.api.domains_api import DomainsApi
+from watchtowr_api_sdk.api.subdomains_api import SubdomainsApi
+from watchtowr_api_sdk.api.ports_api import PortsApi
+from watchtowr_api_sdk.api.ip_ranges_api import IPRangesApi
+from watchtowr_api_sdk.api.cloud_storage_api import CloudStorageApi
+from watchtowr_api_sdk.api.repositories_api import RepositoriesApi
+from watchtowr_api_sdk.api.containers_api import ContainersApi
+from watchtowr_api_sdk.api.saa_s_platforms_api import SaaSPlatformsApi
+from watchtowr_api_sdk.api.mobile_applications_api import MobileApplicationsApi
+
+_ASSET_API_MAP = [
+    ("IP Addresses", IPAddressesApi, "get_list_asset_ips"),
+    ("Domains", DomainsApi, "get_list_asset_domains"),
+    ("Subdomains", SubdomainsApi, "get_list_asset_subdomains"),
+    ("Ports", PortsApi, "get_list_asset_ports"),
+    ("IP Ranges", IPRangesApi, "get_list_asset_ipranges"),
+    ("Cloud Storage", CloudStorageApi, "get_list_asset_cloud_storages"),
+    ("Repositories", RepositoriesApi, "get_list_asset_repositories"),
+    ("Containers", ContainersApi, "get_list_asset_container"),
+    ("SaaS Platforms", SaaSPlatformsApi, "get_list_asset_saas_platforms"),
+    ("Mobile Apps", MobileApplicationsApi, "get_list_asset_mobile_apps"),
+]
+
+# kwargs the reporting/composite tools currently pass through the map.
+_MAP_KWARGS = ["statuses", "business_unit_ids", "created_from", "created_to", "page_size"]
+
+
+@pytest.mark.parametrize("label,cls,method_name", _ASSET_API_MAP)
+def test_asset_map_methods_accept_common_kwargs(label, cls, method_name):
+    fn = getattr(cls, method_name)
+    params = {p for p in inspect.signature(fn).parameters if p != "self"}
+    unsupported = [kw for kw in _MAP_KWARGS if kw not in params]
+    assert not unsupported, (
+        f"{label} ({cls.__name__}.{method_name}) does not accept {unsupported}. "
+        f"reporting.py/composite.py pass these to every map entry; the call is "
+        f"silently swallowed by try/except. Either drop the kwarg for this endpoint "
+        f"or sanitize per-endpoint."
+    )
