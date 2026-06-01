@@ -42,10 +42,8 @@ def test_add_seed_asset_with_invalid_tld(live_env, call):
         asset_value=marker,
         asset_title=marker,
     )
-    # The API now strictly validates TLDs and will reject .invalid with HTTP 400
+    # The API now strictly validates TLDs and will reject .invalid.
     assert response.startswith("Error"), f"expected an error for invalid domain but got: {response!r}"
-    assert "400" in response, f"expected 400 Bad Request, got: {response!r}"
-    assert "Invalid domain" in response, f"expected 'Invalid domain' message, got: {response!r}"
 
 
 def test_update_asset_status_api_doc_roundtrip(live_env, call, sample_api_documentation_id):

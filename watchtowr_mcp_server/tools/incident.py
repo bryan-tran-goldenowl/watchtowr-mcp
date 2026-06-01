@@ -8,9 +8,16 @@ from watchtowr_api_sdk.api.ports_api import PortsApi
 from ..client import get_api_client, get_total, severity_display
 
 
+import inspect
+
+def _filter_kwargs(func, kwargs):
+    sig = inspect.signature(func)
+    return {k: v for k, v in kwargs.items() if k in sig.parameters}
+
 def _count(api_instance, method_name, **kwargs):
     method = getattr(api_instance, method_name)
-    response = method(page_size=1, **kwargs)
+    valid_kwargs = _filter_kwargs(method, kwargs)
+    response = method(page_size=1, **valid_kwargs)
     return get_total(response) or (len(response.data) if hasattr(response, 'data') and response.data else 0)
 
 

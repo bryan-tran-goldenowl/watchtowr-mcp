@@ -4,7 +4,7 @@ A [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server that c
 
 ## Features
 
-- **88 tools** covering the full watchTowr Platform API — assets, findings, hunts, certificates, suspicious domains, and more
+- **95 tools** covering the full watchTowr Platform API — assets, findings, hunts, certificates, suspicious domains, and more
 - **Read and write** — query your attack surface and take action (update statuses, trigger retests, submit seed assets)
 - **Composite intelligence** — built-in tools for attack surface summaries, change detection, executive scorecards, and compliance reporting
 - **Secure** — authenticates via API key with tenant isolation; credentials never leave your environment
@@ -122,10 +122,11 @@ docker run -d --rm \
 | `WATCHTOWR_PLATFORM_HOST` | Yes | Your watchTowr Platform instance URL |
 | `MCP_TRANSPORT` | No | Transport mode: `stdio` (default) or `streamable-http` |
 | `PORT` | No | HTTP port when using `streamable-http` transport (default: `8080`) |
+| `WATCHTOWR_ENABLED_MODULES` | No | Comma-separated list of modules to enable (e.g., `findings,assets`). Set to `all` to enable everything (95 tools). If not set, defaults to `findings,assets,hunts,threat_intel` (46 tools) to avoid hitting the 100-tool limit in certain MCP clients (like Antigravity or Cursor). |
 
 ## Available Tools
 
-### Findings (10 tools)
+### Findings (11 tools)
 
 | Tool | Description |
 |------|-------------|
@@ -134,13 +135,14 @@ docker run -d --rm \
 | `get_finding_details` | Get full finding detail — description, evidence, CVSS, CVE, EPSS |
 | `search_findings` | Search with filters: title, severity, status, asset, assignee, tags, date range |
 | `update_finding_status` | Change the status of a finding |
+| `update_finding_state` | Update the handling state of a finding (Uninvestigated, In Progress, Completed) |
 | `retest_finding` | Trigger a retest to verify remediation |
 | `get_finding_statuses` | List available finding status values |
 | `get_findings_summary_by_severity` | Count breakdown of findings by severity level |
 | `get_unresolved_findings_by_business_unit` | List unresolved findings for a specific business unit |
 | `export_finding_pdf` | Export a finding report as PDF |
 
-### Assets (24 tools)
+### Assets (30 tools)
 
 | Tool | Description |
 |------|-------------|
@@ -168,6 +170,12 @@ docker run -d --rm \
 | `get_asset_mobile_app_details` | Full detail for a specific mobile application |
 | `update_asset_status` | Update the status of any asset type |
 | `add_seed_asset` | Submit a new seed asset for discovery |
+| `list_api_documentations` | List discovered API documentation assets |
+| `get_api_documentation_details` | Full detail for a specific API documentation asset |
+| `list_cloud_assets` | List discovered cloud assets (AWS, GCP, Azure, etc.) |
+| `get_cloud_asset_details` | Full detail for a specific cloud asset |
+| `list_package_managers` | List discovered package manager registry assets |
+| `get_package_manager_details` | Full detail for a specific package manager asset |
 
 ### Hunts (6 tools)
 
@@ -196,7 +204,7 @@ docker run -d --rm \
 | Tool | Description |
 |------|-------------|
 | `list_services` | List exposed services with technology stack and country |
-| `search_services_by_technology` | Search services by technology, port, or service type |
+| `list_technology_statistics` | List technology statistics for discovered services, ordered by count |
 
 ### Organisation (5 tools)
 
@@ -317,7 +325,7 @@ watchtowr-mcp/
 A two-layer test suite lives under `test/` — see `test/README.md` for details.
 
 - **Unit tests** (offline, no credentials): verify every SDK method the server imports actually exists, that `README.md` stays in sync with the `@mcp.tool()` registry, and that `sdk_compat` patches apply cleanly.
-- **Integration tests** (live tenant): one test per tool across all 88 tools. Auto-skipped when `WATCHTOWR_API_KEY` / `WATCHTOWR_PLATFORM_HOST` are absent. Mutating tools are gated behind a separate `--run-writes` flag.
+- **Integration tests** (live tenant): one test per tool across all 89 tools. Auto-skipped when `WATCHTOWR_API_KEY` / `WATCHTOWR_PLATFORM_HOST` are absent. Mutating tools are gated behind a separate `--run-writes` flag.
 
 ```bash
 # Offline checks

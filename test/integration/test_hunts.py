@@ -23,7 +23,6 @@ def test_list_findings_by_hunt(live_env, call, sample_hunt_id):
 
 def test_list_assets_by_hunt(live_env, call, sample_hunt_id):
     result = call("list_assets_by_hunt", hunt_id=sample_hunt_id, page_size=5)
-    print("\n--- ASSETS FOR HUNT 112 ---\n", result)
     assert_ok(result, allow_empty=True)
 
 

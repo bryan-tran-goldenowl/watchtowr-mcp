@@ -62,19 +62,18 @@ def live_env():
 @pytest.fixture(scope="session")
 def tools() -> dict[str, callable]:
     """Every @mcp.tool() function in the server, keyed by function name."""
-    # Force tests to load all modules so we can verify all 88 tools
-    original_modules = os.environ.get("WATCHTOWR_ENABLED_MODULES")
-    os.environ["WATCHTOWR_ENABLED_MODULES"] = "all"
+    # Force tests to load all modules so we can verify all tools
+    original_disabled = os.environ.get("WATCHTOWR_DISABLED_TOOL_GROUPS")
+    if "WATCHTOWR_DISABLED_TOOL_GROUPS" in os.environ:
+        del os.environ["WATCHTOWR_DISABLED_TOOL_GROUPS"]
     
     apply_watchtowr_sdk_compat_patches()
     capture = ToolCapture()
     register_all_tools(capture)
     
     # Restore original environment
-    if original_modules is not None:
-        os.environ["WATCHTOWR_ENABLED_MODULES"] = original_modules
-    else:
-        del os.environ["WATCHTOWR_ENABLED_MODULES"]
+    if original_disabled is not None:
+        os.environ["WATCHTOWR_DISABLED_TOOL_GROUPS"] = original_disabled
         
     return capture.tools
 
@@ -119,7 +118,7 @@ def sample_finding_id(live_env, call) -> int:
 
 @pytest.fixture(scope="session")
 def sample_hunt_id(live_env, call) -> int:
-    return 112
+    return _sample_via_list(call, "search_hunts", "hunts", page_size=5)
 
 
 @pytest.fixture(scope="session")
@@ -139,13 +138,12 @@ def sample_subdomain_id(live_env, call) -> int:
 
 @pytest.fixture(scope="session")
 def sample_ip_id(live_env, call) -> int:
-    return 2000
-    # return _sample_via_list(call, "list_asset_ips", "IP addresses", page_size=5)
+    return _sample_via_list(call, "list_asset_ips", "IP addresses", page_size=5)
 
 
 @pytest.fixture(scope="session")
 def sample_port_id(live_env, call) -> int:
-    return 1402202
+    return _sample_via_list(call, "list_asset_ports", "ports", page_size=5)
 
 
 @pytest.fixture(scope="session")
