@@ -5,7 +5,7 @@ from watchtowr_api_sdk.api.domains_api import DomainsApi
 from watchtowr_api_sdk.api.subdomains_api import SubdomainsApi
 from watchtowr_api_sdk.api.ports_api import PortsApi
 
-from ..client import get_api_client, get_total
+from ..client import get_api_client, get_total, severity_display
 
 
 def _count(api_instance, method_name, **kwargs):
@@ -94,7 +94,7 @@ def register_incident_tools(mcp):
             client = get_api_client()
             svc_api = ServiceDiscoveryApi(client)
 
-            resp = svc_api.get_list_service_listing(search=technology_search, page_size=min(page_size, 30))
+            resp = svc_api.get_list_service_listing(technology=technology_search, page_size=min(page_size, 30))
             total = get_total(resp)
 
             if not hasattr(resp, 'data') or not resp.data:
@@ -135,14 +135,16 @@ def register_incident_tools(mcp):
                 status = getattr(f, 'status', 'Unknown')
                 if status not in status_groups:
                     status_groups[status] = []
-                sev = getattr(f, 'severity', 'Unknown')
+                sev = severity_display(getattr(f, 'severity', None))
                 title = getattr(f, 'title', 'No title')
                 fid = getattr(f, 'id', '')
                 status_groups[status].append(f"[ID:{fid}] [{sev}] {title}")
 
             lines = [f"CISA-KEV Remediation Status ({total or len(resp.data)} findings):", ""]
 
-            for status in ["Open", "Triaged", "In Progress", "Remediated", "Accepted Risk"]:
+            # Display in canonical status order (API statuses are lowercase).
+            for status in ["unconfirmed", "confirmed", "remediated",
+                           "risk-accepted", "closed", "asset-no-longer-tracked"]:
                 if status in status_groups:
                     findings = status_groups.pop(status)
                     lines.append(f"{status} ({len(findings)}):")
@@ -239,7 +241,7 @@ def register_incident_tools(mcp):
                         lines.append(f"\nFindings ({f_total}):")
                         for f in f_resp.data:
                             fid = getattr(f, 'id', '')
-                            sev = getattr(f, 'severity', 'Unknown')
+                            sev = severity_display(getattr(f, 'severity', None))
                             title = getattr(f, 'title', 'No title')
                             lines.append(f"  • [ID:{fid}] [{sev}] {title}")
                 except Exception as e:
@@ -263,7 +265,7 @@ def register_incident_tools(mcp):
                             lines.append(f"Findings ({f_total}):")
                             for f in f_resp.data:
                                 fid = getattr(f, 'id', '')
-                                sev = getattr(f, 'severity', 'Unknown')
+                                sev = severity_display(getattr(f, 'severity', None))
                                 title = getattr(f, 'title', 'No title')
                                 lines.append(f"  • [ID:{fid}] [{sev}] {title}")
 

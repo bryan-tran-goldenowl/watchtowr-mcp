@@ -98,13 +98,8 @@ def register_workflow_tools(mcp):
                 if hasattr(log_resp, 'data') and log_resp.data:
                     for log in log_resp.data[:5]:
                         desc = getattr(log, 'description', '')
-                        if isinstance(desc, dict):
-                            import json
-                            desc = json.dumps(desc, default=str)
                         causer = getattr(log, 'caused_by', None)
                         user = getattr(causer, 'name', 'System') if causer else 'System'
-                        if isinstance(user, dict):
-                            user = user.get('name', 'System')
                         lines.append(f"  • {user}: {desc}")
             except Exception:
                 lines.append("Activity Logs: error")
@@ -155,7 +150,11 @@ def register_workflow_tools(mcp):
 
             client = get_api_client()
             findings_api = FindingsApi(client)
-            body = UpdateClientFindingStatusRequestBody(status=status)
+            VALID_STATUSES = {"confirmed", "unconfirmed", "remediated", "risk-accepted", "closed", "asset-no-longer-tracked"}
+            status_lower = status.lower().strip()
+            if status_lower not in VALID_STATUSES:
+                return f"Invalid status '{status}'. Valid: {', '.join(sorted(VALID_STATUSES))}"
+            body = UpdateClientFindingStatusRequestBody(status=status_lower)
 
             results = []
             for fid in ids:

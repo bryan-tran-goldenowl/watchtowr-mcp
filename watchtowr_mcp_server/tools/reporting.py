@@ -108,7 +108,7 @@ def register_reporting_tools(mcp):
                     api = api_cls(client)
                     method = getattr(api, method_name)
                     response = method(**supported_kwargs(
-                        method, {"statuses": "VerifiedOutOfScope,Incorrect Identification", "page_size": 10}
+                        method, {"statuses": "verifiedOutOfScope,incorrect identification", "page_size": 10}
                     ))
                     count = get_total(response) or (len(response.data) if hasattr(response, 'data') and response.data else 0)
 
@@ -245,7 +245,7 @@ def register_reporting_tools(mcp):
                 try:
                     remediated_count = _count(
                         findings_api, "get_list_findings",
-                        statuses="Remediated",
+                        statuses="remediated",
                         created_from=week_start, created_to=week_end,
                     )
                 except Exception:

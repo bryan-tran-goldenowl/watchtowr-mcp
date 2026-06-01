@@ -5,6 +5,91 @@ from ..client import get_api_client, get_total, normalize_severities, parse_date
 from ..constants import SUMMARY_SEVERITIES
 
 
+def _affected_summary(finding) -> str | None:
+    """Extract a one-line summary of the asset a finding affects.
+
+    The SDK exposes `affected` as a dict shaped like {"data": {type, name, id,
+    status, ...}}. Return None when no usable asset info is present.
+    """
+    affected = getattr(finding, 'affected', None)
+    if not affected:
+        return None
+    data = affected.get('data') if isinstance(affected, dict) else getattr(affected, 'data', None)
+    if not isinstance(data, dict):
+        return None
+    asset_type = data.get('type') or ''
+    name = data.get('name') or data.get('url') or data.get('iprange') or ''
+    asset_id = data.get('id')
+    status = data.get('status') or ''
+    if not (asset_type or name or asset_id):
+        return None
+    parts = []
+    if name:
+        parts.append(str(name))
+    if asset_type:
+        parts.append(f"[{asset_type}]")
+    if asset_id is not None:
+        parts.append(f"(ID:{asset_id})")
+    if status:
+        parts.append(f"- {status}")
+    return " ".join(parts)
+
+
+def _retest_lines(finding) -> list[str]:
+    """Format retest progress + history into display lines (empty list if none)."""
+    lines: list[str] = []
+    retest = getattr(finding, 'retest', None)
+    if retest:
+        remaining = getattr(retest, 'retest_remaining', None)
+        current = getattr(retest, 'current_retest', None)
+        if remaining is not None:
+            lines.append(f"Retests Remaining: {remaining}")
+        if current:
+            status = getattr(current, 'retest_status', 'N/A')
+            requested_by = getattr(current, 'requested_by', '') or 'Unknown'
+            requested_at = getattr(current, 'requested_at', '')
+            completed_at = getattr(current, 'completed_at', None)
+            line = f"Current Retest: {status} (requested by {requested_by}"
+            if requested_at:
+                line += f" at {requested_at}"
+            line += ")"
+            if completed_at:
+                line += f" — completed {completed_at}"
+            lines.append(line)
+
+    history = getattr(finding, 'finding_retests', None)
+    if isinstance(history, list) and history:
+        lines.append(f"Retest History ({len(history)}):")
+        for r in history[:5]:
+            status = getattr(r, 'retest_status', 'N/A')
+            requested_at = getattr(r, 'requested_at', '')
+            requested_by = getattr(r, 'requested_by', '') or 'Unknown'
+            lines.append(f"  • {status} by {requested_by} at {requested_at}")
+        if len(history) > 5:
+            lines.append(f"  ... and {len(history) - 5} more")
+    return lines
+
+
+def _custom_property_lines(finding) -> list[str]:
+    """Format custom properties (key=value) into display lines (empty if none)."""
+    cps = getattr(finding, 'custom_properties', None)
+    if not isinstance(cps, list) or not cps:
+        return []
+    pairs = []
+    for cp in cps:
+        if isinstance(cp, dict):
+            key = cp.get('key')
+            value = cp.get('value')
+        else:
+            key = getattr(cp, 'key', None)
+            value = getattr(cp, 'value', None)
+        if key is not None:
+            pairs.append(f"{key}={value}")
+    if not pairs:
+        return []
+    return [f"Custom Properties: {', '.join(pairs)}"]
+
+
 def register_findings_tools(mcp):
 
     @mcp.tool()
@@ -92,6 +177,10 @@ def register_findings_tools(mcp):
             lines.append(f"Severity: {severity_display(getattr(finding, 'severity', None))}")
             lines.append(f"Status: {getattr(finding, 'status', 'N/A')}")
 
+            finding_impact = getattr(finding, 'finding_impact', None)
+            if finding_impact:
+                lines.append(f"Finding Impact: {finding_impact}")
+
             state = getattr(finding, 'state', None)
             lines.append(f"State: {state}")
 
@@ -104,8 +193,21 @@ def register_findings_tools(mcp):
             last_seen = getattr(finding, 'last_seen', None)
             lines.append(f"Last Seen: {last_seen}")
 
+            last_status_updated = getattr(finding, 'last_status_updated_at', None)
+            if last_status_updated:
+                lines.append(f"Last Status Update: {last_status_updated}")
+
             detection_rules = getattr(finding, 'detection_rules', None)
-            lines.append(f"Detection Rules: {detection_rules}")
+            if detection_rules:
+                lines.append(f"\nDetection Rules ({len(detection_rules)}):")
+                for rule in detection_rules[:5]:
+                    title = rule.get('title', 'Unknown') if isinstance(rule, dict) else 'Unknown'
+                    rule_type = rule.get('type', '') if isinstance(rule, dict) else ''
+                    lines.append(f"  • [{rule_type}] {title}")
+
+            affected = _affected_summary(finding)
+            if affected:
+                lines.append(f"Affected Asset: {affected}")
 
             cvss = getattr(finding, 'cvssv3_score', None)
             if cvss is not None:
@@ -146,6 +248,17 @@ def register_findings_tools(mcp):
             assignee = getattr(finding, 'assigned_user', None)
             if assignee:
                 lines.append(f"Assigned to: {getattr(assignee, 'name', 'N/A')}")
+
+            cp_lines = _custom_property_lines(finding)
+            if cp_lines:
+                lines.append("")
+                lines.extend(cp_lines)
+
+            retest_lines = _retest_lines(finding)
+            if retest_lines:
+                lines.append("")
+                lines.append("Retest:")
+                lines.extend(f"  {rl}" for rl in retest_lines)
 
             lines.append(f"Created: {getattr(finding, 'created_at', 'N/A')}")
 
@@ -232,7 +345,9 @@ def register_findings_tools(mcp):
                 sev = severity_display(getattr(f, 'severity', None))
                 title = getattr(f, 'title', 'No title')
                 status = getattr(f, 'status', 'Unknown')
-                lines.append(f"• [ID:{fid}] [{sev}] {title} ({status})")
+                affected = _affected_summary(f)
+                affected_str = f" → {affected}" if affected else ""
+                lines.append(f"• [ID:{fid}] [{sev}] {title} ({status}){affected_str}")
 
             header = f"Findings ({len(lines)}"
             if total:

@@ -26,10 +26,12 @@ def register_hunt_tools(mcp):
                 title = getattr(h, 'title', 'Unnamed hunt')
                 status = getattr(h, 'status', 'Unknown')
                 hunt_type = getattr(h, 'type', '')
+                request_type = getattr(h, 'hunt_request_type', '')
                 findings = getattr(h, 'total_findings', 0)
                 assets = getattr(h, 'total_assets', 0)
                 created = getattr(h, 'created_at', '')
-                type_str = f" ({hunt_type})" if hunt_type else ""
+                type_bits = [b for b in (hunt_type, request_type) if b]
+                type_str = f" ({', '.join(type_bits)})" if type_bits else ""
                 lines.append(
                     f"• [ID:{hid}] {title} - {status}{type_str} "
                     f"[{findings} findings, {assets} assets] (created: {created})"
@@ -68,6 +70,14 @@ def register_hunt_tools(mcp):
                 f"Created: {getattr(h, 'created_at', 'N/A')}",
             ]
 
+            request_type = getattr(h, 'hunt_request_type', None)
+            if request_type:
+                lines.append(f"Request Type: {request_type}")
+
+            rapid_mechanism = getattr(h, 'rapid_exposure_mechanism', None)
+            if rapid_mechanism:
+                lines.append(f"Rapid Exposure Mechanism: {rapid_mechanism}")
+
             completed_at = getattr(h, 'completed_at', None)
             if completed_at:
                 lines.append(f"Completed: {completed_at}")
@@ -88,9 +98,10 @@ def register_hunt_tools(mcp):
                 lines.append(f"\nHypothesis:\n{hypothesis}")
 
             refs = getattr(h, 'references', [])
-            if refs:
+            valid_refs = [r for r in (refs or []) if r is not None]
+            if valid_refs:
                 lines.append("\nReferences:")
-                for ref in refs:
+                for ref in valid_refs:
                     lines.append(f"  • {ref}")
 
             return "\n".join(lines)
@@ -230,10 +241,12 @@ def register_hunt_tools(mcp):
                 hid = getattr(h, 'id', '')
                 title = getattr(h, 'title', 'Unnamed')
                 status = getattr(h, 'status', 'Unknown')
+                request_type = getattr(h, 'hunt_request_type', '')
                 findings = getattr(h, 'total_findings', 0)
                 assets = getattr(h, 'total_assets', 0)
+                rt_str = f" ({request_type})" if request_type else ""
                 lines.append(
-                    f"• [ID:{hid}] {title} - {status} "
+                    f"• [ID:{hid}] {title} - {status}{rt_str} "
                     f"[{findings} findings, {assets} assets]"
                 )
 

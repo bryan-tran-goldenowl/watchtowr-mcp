@@ -146,7 +146,6 @@ def register_asset_tools(mcp):
                 f"Live: {getattr(ip, 'live', 'N/A')}",
                 f"Country: {getattr(ip, 'country', 'N/A')}",
                 f"Created: {getattr(ip, 'created_at', 'N/A')}",
-                f"Updated: {getattr(ip, 'updated_at', 'N/A')}",
             ]
             bus = format_bus(getattr(ip, 'business_units', []))
             if bus:
@@ -238,7 +237,6 @@ def register_asset_tools(mcp):
                 f"Banner: {getattr(p, 'banner', 'N/A')}",
                 f"Status: {getattr(p, 'status', 'N/A')}",
                 f"Created: {getattr(p, 'created_at', 'N/A')}",
-                f"Updated: {getattr(p, 'updated_at', 'N/A')}",
             ]
             bus = format_bus(getattr(p, 'business_units', []))
             if bus:
@@ -330,7 +328,6 @@ def register_asset_tools(mcp):
                 f"Source: {getattr(d, 'source', 'N/A')}",
                 f"Live: {getattr(d, 'live', 'N/A')}",
                 f"Created: {getattr(d, 'created_at', 'N/A')}",
-                f"Updated: {getattr(d, 'updated_at', 'N/A')}",
             ]
             bus = format_bus(getattr(d, 'business_units', []))
             if bus:
@@ -422,7 +419,6 @@ def register_asset_tools(mcp):
                 f"Source: {getattr(s, 'source', 'N/A')}",
                 f"Live: {getattr(s, 'live', 'N/A')}",
                 f"Created: {getattr(s, 'created_at', 'N/A')}",
-                f"Updated: {getattr(s, 'updated_at', 'N/A')}",
             ]
             bus = format_bus(getattr(s, 'business_units', []))
             if bus:
@@ -627,7 +623,6 @@ def register_asset_tools(mcp):
                 f"Status: {getattr(r, 'status', 'N/A')}",
                 f"Source: {getattr(r, 'source', 'N/A')}",
                 f"Created: {getattr(r, 'created_at', 'N/A')}",
-                f"Updated: {getattr(r, 'updated_at', 'N/A')}",
             ]
             bus = format_bus(getattr(r, 'business_units', []))
             if bus:
@@ -725,7 +720,6 @@ def register_asset_tools(mcp):
                 f"Status: {getattr(cs, 'status', 'N/A')}",
                 f"Source: {getattr(cs, 'source', 'N/A')}",
                 f"Created: {getattr(cs, 'created_at', 'N/A')}",
-                f"Updated: {getattr(cs, 'updated_at', 'N/A')}",
             ]
             bus = format_bus(getattr(cs, 'business_units', []))
             if bus:
@@ -823,7 +817,6 @@ def register_asset_tools(mcp):
                 f"Status: {getattr(r, 'status', 'N/A')}",
                 f"Source: {getattr(r, 'source', 'N/A')}",
                 f"Created: {getattr(r, 'created_at', 'N/A')}",
-                f"Updated: {getattr(r, 'updated_at', 'N/A')}",
             ]
             bus = format_bus(getattr(r, 'business_units', []))
             if bus:
@@ -922,7 +915,6 @@ def register_asset_tools(mcp):
                 f"Status: {getattr(c, 'status', 'N/A')}",
                 f"Source: {getattr(c, 'source', 'N/A')}",
                 f"Created: {getattr(c, 'created_at', 'N/A')}",
-                f"Updated: {getattr(c, 'updated_at', 'N/A')}",
             ]
             bus = format_bus(getattr(c, 'business_units', []))
             if bus:
@@ -1017,7 +1009,6 @@ def register_asset_tools(mcp):
                 f"Status: {getattr(s, 'status', 'N/A')}",
                 f"Source: {getattr(s, 'source', 'N/A')}",
                 f"Created: {getattr(s, 'created_at', 'N/A')}",
-                f"Updated: {getattr(s, 'updated_at', 'N/A')}",
             ]
             bus = format_bus(getattr(s, 'business_units', []))
             if bus:
@@ -1117,7 +1108,6 @@ def register_asset_tools(mcp):
                 f"Status: {getattr(m, 'status', 'N/A')}",
                 f"Source: {getattr(m, 'source', 'N/A')}",
                 f"Created: {getattr(m, 'created_at', 'N/A')}",
-                f"Updated: {getattr(m, 'updated_at', 'N/A')}",
             ]
             return "\n".join(lines)
         except Exception as e:
@@ -1218,13 +1208,25 @@ def register_asset_tools(mcp):
                 f"Cloud Asset #{getattr(ca, 'id', cloud_asset_id)}",
                 f"Name: {getattr(ca, 'name', 'N/A')}",
                 f"Provider: {getattr(ca, 'provider', 'N/A')}",
-                f"Super Type: {getattr(ca, 'super_type', 'N/A')}",
-                f"Sub Type: {getattr(ca, 'sub_type', 'N/A')}",
                 f"Status: {getattr(ca, 'status', 'N/A')}",
                 f"Source: {getattr(ca, 'source', 'N/A')}",
-                f"Created: {getattr(ca, 'created_at', 'N/A')}",
-                f"Updated: {getattr(ca, 'updated_at', 'N/A')}",
             ]
+            hostname = getattr(ca, 'hostname', None)
+            if hostname:
+                lines.append(f"Hostname: {hostname}")
+            cloud_resource_id = getattr(ca, 'cloud_resource_id', None)
+            if cloud_resource_id:
+                lines.append(f"Cloud Resource ID: {cloud_resource_id}")
+            super_type = getattr(ca, 'super_type', None)
+            if super_type:
+                lines.append(f"Super Type: {super_type}")
+            sub_type = getattr(ca, 'sub_type', None)
+            if sub_type:
+                lines.append(f"Sub Type: {sub_type}")
+            criticality = getattr(ca, 'criticality', None)
+            if criticality:
+                lines.append(f"Criticality: {criticality}")
+            lines.append(f"Created: {getattr(ca, 'created_at', 'N/A')}")
             bus = format_bus(getattr(ca, 'business_units', []))
             if bus:
                 lines.append(f"Business Units:{bus}")
@@ -1279,10 +1281,12 @@ def register_asset_tools(mcp):
             lines = []
             for ad in response.data:
                 adid = getattr(ad, 'id', '')
-                path = getattr(ad, 'path', 'Unknown')
+                name = getattr(ad, 'name', None) or getattr(ad, 'url', None) or 'Unknown'
+                url = getattr(ad, 'url', '')
                 status = getattr(ad, 'status', 'Unknown')
                 bus = format_bus(getattr(ad, 'business_units', []))
-                lines.append(f"• [ID:{adid}] {path} - {status}{bus}")
+                url_str = f" - {url}" if url and url != name else ""
+                lines.append(f"• [ID:{adid}] {name}{url_str} - {status}{bus}")
 
             header = f"API Documentations ({len(lines)}"
             if total:
@@ -1311,11 +1315,12 @@ def register_asset_tools(mcp):
 
             lines = [
                 f"API Documentation #{getattr(ad, 'id', api_documentation_id)}",
-                f"Path: {getattr(ad, 'path', 'N/A')}",
+                f"Name: {getattr(ad, 'name', 'N/A')}",
+                f"URL: {getattr(ad, 'url', 'N/A')}",
+                f"Platform: {getattr(ad, 'platform', 'N/A')}",
                 f"Status: {getattr(ad, 'status', 'N/A')}",
                 f"Source: {getattr(ad, 'source', 'N/A')}",
                 f"Created: {getattr(ad, 'created_at', 'N/A')}",
-                f"Updated: {getattr(ad, 'updated_at', 'N/A')}",
             ]
             bus = format_bus(getattr(ad, 'business_units', []))
             if bus:
@@ -1410,7 +1415,6 @@ def register_asset_tools(mcp):
                 f"Status: {getattr(pm, 'status', 'N/A')}",
                 f"Source: {getattr(pm, 'source', 'N/A')}",
                 f"Created: {getattr(pm, 'created_at', 'N/A')}",
-                f"Updated: {getattr(pm, 'updated_at', 'N/A')}",
             ]
             bus = format_bus(getattr(pm, 'business_units', []))
             if bus:
@@ -1478,11 +1482,9 @@ def register_asset_tools(mcp):
                 elif asset_type == "api_documentation":
                     dto = UpdateApiDocumentationStatusDto(**dto_kwargs)
                     param_name = "update_api_documentation_status_dto"
-                elif asset_type == "package_manager":
+                else:
                     dto = UpdateClientNextGenAssetStatusDto(**dto_kwargs)
                     param_name = "update_client_next_gen_asset_status_dto"
-                else:
-                    raise ValueError(f"Unhandled nextgen asset type: {asset_type}")
 
                 api = api_cls(client)
                 method = getattr(api, method_name)

@@ -44,7 +44,7 @@ def register_threat_intel_tools(mcp):
             if whois_search:
                 kwargs["whois_search"] = whois_search
             if statuses:
-                kwargs["statuses"] = statuses
+                kwargs["statuses"] = [s.strip() for s in statuses.split(",") if s.strip()]
             if created_from:
                 kwargs["created_from"] = parse_date(created_from)
             if created_to:
@@ -101,11 +101,15 @@ def register_threat_intel_tools(mcp):
                 lines.append("\nWHOIS Data:")
                 for w in whois_data:
                     raw = getattr(w, 'raw', None)
-                    data_obj = getattr(w, 'data', None)
-                    if data_obj:
-                        lines.append(f"  {data_obj}")
-                    elif raw:
+                    if raw:
                         lines.append(f"  {raw[:500]}")
+                    else:
+                        data_obj = getattr(w, 'data', None)
+                        if data_obj:
+                            try:
+                                lines.append(f"  {data_obj.to_json()[:500]}")
+                            except Exception:
+                                lines.append(f"  {data_obj}")
 
             return "\n".join(lines)
         except Exception as e:
@@ -142,7 +146,6 @@ def register_threat_intel_tools(mcp):
             if search:
                 kwargs["search"] = search
             if types:
-                # SDK types this as List[str] (comma-separated input → list).
                 kwargs["types"] = [t.strip() for t in types.split(",") if t.strip()]
             if has_finding is not None:
                 kwargs["has_finding"] = has_finding

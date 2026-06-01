@@ -105,7 +105,9 @@ def register_composite_tools(mcp):
                 try:
                     api = api_cls(client)
                     method = getattr(api, method_name)
-                    response = method(created_from=since, page_size=30)
+                    response = method(**supported_kwargs(
+                        method, {"created_from": since, "page_size": 30}
+                    ))
 
                     count = get_total(response) or (
                         len(response.data) if hasattr(response, 'data') and response.data else 0
@@ -310,40 +312,39 @@ def register_composite_tools(mcp):
                 f"Title: {getattr(f, 'title', 'N/A')}",
                 f"Severity: {severity_display(getattr(f, 'severity', None))}",
                 f"Status: {getattr(f, 'status', 'N/A')}",
-                f"Category: {getattr(f, 'category', 'N/A')}",
                 f"Created: {getattr(f, 'created_at', 'N/A')}",
-                f"Updated: {getattr(f, 'updated_at', 'N/A')}",
             ]
-            bus = format_bus(getattr(f, 'business_units', []))
-            if bus:
-                lines.append(f"Business Units:{bus}")
+            finding_impact = getattr(f, 'finding_impact', None)
+            if finding_impact:
+                lines.append(f"Finding Impact: {finding_impact}")
 
             description = getattr(f, 'description', '')
             if description:
                 lines.append(f"\nDescription:\n{description}")
 
-            remediation = getattr(f, 'remediation', '')
-            if remediation:
-                lines.append(f"\nRemediation:\n{remediation}")
+            recommendation = getattr(f, 'recommendation', '')
+            if recommendation:
+                lines.append(f"\nRecommendation:\n{recommendation}")
 
-            # Try to extract asset context
-            asset = getattr(f, 'asset', None)
-            if asset:
+            # Try to extract asset context. ClientFinding exposes the related
+            # asset under `affected` shaped as {"data": {type, name, id, ...}}.
+            affected = getattr(f, 'affected', None)
+            data = None
+            if isinstance(affected, dict):
+                data = affected.get('data')
+            elif affected is not None:
+                data = getattr(affected, 'data', None)
+
+            if isinstance(data, dict) and (data.get('id') or data.get('name') or data.get('type')):
                 lines.append("\n--- Associated Asset ---")
-                if isinstance(asset, dict):
-                    asset_id = asset.get('id')
-                    asset_type = asset.get('type', '')
-                    asset_name = asset.get('name', '') or asset.get('url', '') or asset.get('iprange', '')
-                else:
-                    asset_id = getattr(asset, 'id', None)
-                    asset_type = getattr(asset, 'type', '')
-                    asset_name = getattr(asset, 'name', '') or getattr(asset, 'url', '') or getattr(asset, 'iprange', '')
-
+                asset_type = data.get('type', '')
+                asset_name = data.get('name') or data.get('url') or data.get('iprange') or ''
+                asset_id = data.get('id')
                 lines.append(f"Asset Type: {asset_type}")
                 lines.append(f"Asset Name: {asset_name}")
                 lines.append(f"Asset ID: {asset_id}")
 
-                if asset_id:
+                if asset_id and asset_type:
                     try:
                         detail_lines = _fetch_asset_detail(client, asset_type, asset_id)
                         if detail_lines:
@@ -392,8 +393,11 @@ def register_composite_tools(mcp):
                 issuer = (getattr(cert, 'issuer_organisation', '') if cert else '') or ''
                 asset_name = (getattr(asset, 'name', '') if asset else '') or ''
                 bus = format_bus(getattr(asset, 'business_units', []) if asset else [])
+                cert_status = (getattr(cert, 'status', '') if cert else '') or ''
 
                 lines.append(f"• {cn or asset_name or 'Unknown'}")
+                if cert_status:
+                    lines.append(f"  Status: {cert_status}")
                 if issuer:
                     lines.append(f"  Issuer: {issuer}")
                 if asset_name:
@@ -496,17 +500,19 @@ def register_composite_tools(mcp):
                     detail_resp = findings_api.get_finding_details(id=fid)
                     fd = detail_resp.data if hasattr(detail_resp, 'data') else detail_resp
                     if fd:
-                        remediation = getattr(fd, 'remediation', '')
-                        asset = getattr(fd, 'asset', None)
-                        if asset:
-                            if isinstance(asset, dict):
-                                asset_name = asset.get('name', '') or asset.get('url', '')
-                            else:
-                                asset_name = getattr(asset, 'name', '') or getattr(asset, 'url', '')
+                        recommendation = getattr(fd, 'recommendation', '')
+                        affected = getattr(fd, 'affected', None)
+                        data = None
+                        if isinstance(affected, dict):
+                            data = affected.get('data')
+                        elif affected is not None:
+                            data = getattr(affected, 'data', None)
+                        if isinstance(data, dict):
+                            asset_name = data.get('name') or data.get('url') or data.get('iprange') or ''
                             if asset_name:
                                 lines.append(f"   Asset: {asset_name}")
-                        if remediation:
-                            rem_preview = remediation[:200].replace('\n', ' ')
+                        if recommendation:
+                            rem_preview = recommendation[:200].replace('\n', ' ')
                             lines.append(f"   Remediation: {rem_preview}")
                 except Exception:
                     pass
@@ -750,7 +756,9 @@ def register_composite_tools(mcp):
                 try:
                     api = api_cls(client)
                     method = getattr(api, method_name)
-                    response = method(created_from=since, page_size=30)
+                    response = method(**supported_kwargs(
+                        method, {"created_from": since, "page_size": 30}
+                    ))
 
                     if hasattr(response, 'data') and response.data:
                         no_bu = []
