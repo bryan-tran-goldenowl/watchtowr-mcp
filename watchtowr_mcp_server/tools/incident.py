@@ -25,7 +25,7 @@ def register_incident_tools(mcp):
 
     @mcp.tool()
     def search_assets_by_country(country_code: str, page_size: int = 30) -> str:
-        """Find all IP addresses and services located in a specific country.
+        """Find services located in a specific country.
 
         Args:
             country_code: Two-letter country code (e.g. "US", "CN", "RU").
@@ -35,7 +35,6 @@ def register_incident_tools(mcp):
             client = get_api_client()
             lines = [f"Assets in Country: {country_code.upper()}", ""]
 
-            ip_total = 0
             lines.append("Note: Direct IP search by country is not supported by the API. Showing services.")
             lines.append("")
 
@@ -54,7 +53,7 @@ def register_incident_tools(mcp):
                 if svc_total > len(svc_resp.data):
                     lines.append(f"  ... and {svc_total - len(svc_resp.data)} more")
 
-            if ip_total == 0 and svc_total == 0:
+            if svc_total == 0:
                 return f"No assets found in country {country_code.upper()}."
 
             return "\n".join(lines)

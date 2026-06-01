@@ -164,11 +164,11 @@ def register_workflow_tools(mcp):
                         
                         update_client_finding_status_request_body=body,
                     )
-                    results.append(f"• Finding {fid}: updated to {status}")
+                    results.append(f"• Finding {fid}: updated to {status_lower}")
                 except Exception as e:
                     results.append(f"• Finding {fid}: error - {e}")
 
-            return f"Bulk Status Update ({len(ids)} findings → {status}):\n" + "\n".join(results)
+            return f"Bulk Status Update ({len(ids)} findings → {status_lower}):\n" + "\n".join(results)
         except Exception as e:
             return f"Error in bulk status update: {e}"
 

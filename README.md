@@ -122,7 +122,6 @@ docker run -d --rm \
 | `WATCHTOWR_PLATFORM_HOST` | Yes | Your watchTowr Platform instance URL |
 | `MCP_TRANSPORT` | No | Transport mode: `stdio` (default) or `streamable-http` |
 | `PORT` | No | HTTP port when using `streamable-http` transport (default: `8080`) |
-| `WATCHTOWR_ENABLED_MODULES` | No | Comma-separated list of modules to enable (e.g., `findings,assets`). Set to `all` to enable everything (95 tools). If not set, defaults to `findings,assets,hunts,threat_intel` (46 tools) to avoid hitting the 100-tool limit in certain MCP clients (like Antigravity or Cursor). |
 
 ## Available Tools
 
@@ -325,7 +324,7 @@ watchtowr-mcp/
 A two-layer test suite lives under `test/` — see `test/README.md` for details.
 
 - **Unit tests** (offline, no credentials): verify every SDK method the server imports actually exists, that `README.md` stays in sync with the `@mcp.tool()` registry, and that `sdk_compat` patches apply cleanly.
-- **Integration tests** (live tenant): one test per tool across all 89 tools. Auto-skipped when `WATCHTOWR_API_KEY` / `WATCHTOWR_PLATFORM_HOST` are absent. Mutating tools are gated behind a separate `--run-writes` flag.
+- **Integration tests** (live tenant): one test per tool across all 95 tools. Auto-skipped when `WATCHTOWR_API_KEY` / `WATCHTOWR_PLATFORM_HOST` are absent. Mutating tools are gated behind a separate `--run-writes` flag.
 
 ```bash
 # Offline checks
