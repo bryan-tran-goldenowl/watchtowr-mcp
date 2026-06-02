@@ -407,9 +407,10 @@ def register_findings_tools(mcp):
             
             if statuses and isinstance(statuses, list):
                 # Handle nested list [["confirmed", ...]]
-                status_list = statuses[0] if isinstance(statuses[0], list) else statuses
+                first = statuses[0]
+                status_list = first if isinstance(first, list) else statuses
                 return "Available Finding Statuses:\n" + "\n".join(f"• {s}" for s in status_list)
-            
+
             return f"Available Finding Statuses: {statuses}"
         except Exception as e:
             return f"Error retrieving finding statuses: {e}"

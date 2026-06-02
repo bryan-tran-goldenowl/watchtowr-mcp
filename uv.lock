@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.10"
 
 [manifest]
@@ -1480,7 +1480,7 @@ wheels = [
 ]
 
 [[package]]
-name = "watchtowr-api"
+name = "watchtowr-api-sdk"
 version = "1.0.0"
 source = { editable = "watchtowr-api-sdk" }
 dependencies = [
@@ -1492,10 +1492,10 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "pydantic", specifier = ">=2" },
-    { name = "python-dateutil" },
+    { name = "pydantic", specifier = ">=2.11" },
+    { name = "python-dateutil", specifier = ">=2.8.2" },
     { name = "typing-extensions", specifier = ">=4.7.1" },
-    { name = "urllib3", specifier = ">=1.25.3,<2.1.0" },
+    { name = "urllib3", specifier = ">=2.1.0,<3.0.0" },
 ]
 
 [[package]]
@@ -1509,7 +1509,7 @@ dependencies = [
     { name = "pydantic" },
     { name = "python-dateutil" },
     { name = "urllib3" },
-    { name = "watchtowr-api" },
+    { name = "watchtowr-api-sdk" },
 ]
 
 [package.dev-dependencies]
@@ -1525,7 +1525,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.12.5" },
     { name = "python-dateutil", specifier = ">=2.9.0.post0" },
     { name = "urllib3", specifier = ">=2.6.3" },
-    { name = "watchtowr-api", editable = "watchtowr-api-sdk" },
+    { name = "watchtowr-api-sdk", editable = "watchtowr-api-sdk" },
 ]
 
 [package.metadata.requires-dev]

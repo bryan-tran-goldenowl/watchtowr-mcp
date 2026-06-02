@@ -4,7 +4,7 @@ A [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server that c
 
 ## Features
 
-- **95 tools** covering the full watchTowr Platform API — assets, findings, hunts, certificates, suspicious domains, and more
+- **104 tools** covering the full watchTowr Platform API — assets, findings, hunts, certificates, suspicious domains, and more
 - **Read and write** — query your attack surface and take action (update statuses, trigger retests, submit seed assets)
 - **Composite intelligence** — built-in tools for attack surface summaries, change detection, executive scorecards, and compliance reporting
 - **Secure** — authenticates via API key with tenant isolation; credentials never leave your environment
@@ -198,6 +198,20 @@ docker run -d --rm \
 | `get_certificate_details` | Full certificate detail including SANs and key info |
 | `get_expiring_certificates` | List certificates expiring within N days |
 
+### Intelligence (9 tools)
+
+| Tool | Description |
+|------|-------------|
+| `list_vulnerability_intelligence` | List vulnerability intelligence entries (CVEs) |
+| `get_vulnerability_intelligence_details` | Get full details for a CVE/vulnerability |
+| `list_adversary_intelligence` | List adversary/threat actor profiles |
+| `get_adversary_intelligence_details` | Get full details for a threat actor |
+| `list_compromised_endpoints` | List compromised endpoints from stealer logs |
+| `get_compromised_endpoint_credentials` | List harvested credentials for an endpoint |
+| `list_credential_attempt_logs` | List credential stuffing attempt logs |
+| `list_finding_retest_history` | List retest history across all findings |
+| `get_finding_retest_history_details` | Get retest history for a specific finding |
+
 ### Services (2 tools)
 
 | Tool | Description |
@@ -253,7 +267,7 @@ docker run -d --rm \
 
 | Tool | Description |
 |------|-------------|
-| `search_assets_by_country` | Find all IPs and services in a specific country |
+| `search_assets_by_country` | Find all services in a specific country |
 | `get_internet_facing_services_summary` | Exposed services grouped by type with counts |
 | `get_assets_by_technology` | Find all services running a specific technology |
 | `get_cisa_kev_remediation_status` | CISA-KEV findings grouped by remediation status |
@@ -324,7 +338,7 @@ watchtowr-mcp/
 A two-layer test suite lives under `test/` — see `test/README.md` for details.
 
 - **Unit tests** (offline, no credentials): verify every SDK method the server imports actually exists, that `README.md` stays in sync with the `@mcp.tool()` registry, and that `sdk_compat` patches apply cleanly.
-- **Integration tests** (live tenant): one test per tool across all 95 tools. Auto-skipped when `WATCHTOWR_API_KEY` / `WATCHTOWR_PLATFORM_HOST` are absent. Mutating tools are gated behind a separate `--run-writes` flag.
+- **Integration tests** (live tenant): one test per tool across all 104 tools. Auto-skipped when `WATCHTOWR_API_KEY` / `WATCHTOWR_PLATFORM_HOST` are absent. Mutating tools are gated behind a separate `--run-writes` flag.
 
 ```bash
 # Offline checks

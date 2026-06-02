@@ -715,12 +715,22 @@ def register_composite_tools(mcp):
             client = get_api_client()
             findings_api = FindingsApi(client)
 
-            asset_types = ["domain", "subdomain", "ip_address", "port", "ip_range",
-                           "cloud_storage", "repository", "container", "saas_platform", "mobile_app"]
+            asset_types = {
+                "domain": "Domain",
+                "subdomain": "Subdomain",
+                "ip": "IP Address",
+                "port": "Port",
+                "ipRange": "IP Range",
+                "cloudStorage": "Cloud Storage",
+                "repository": "Repository",
+                "container": "Container",
+                "saasPlatform": "SaaS Platform",
+                "mobileApp": "Mobile App"
+            }
 
             lines = ["Unresolved Findings by Asset Type:", ""]
             total = 0
-            for at in asset_types:
+            for at, label in asset_types.items():
                 try:
                     count = _count(
                         findings_api, "get_list_findings",
@@ -729,9 +739,9 @@ def register_composite_tools(mcp):
                     )
                     total += count
                     if count > 0:
-                        lines.append(f"  • {at.replace('_', ' ').title()}: {count}")
+                        lines.append(f"  • {label}: {count}")
                 except Exception:
-                    lines.append(f"  • {at.replace('_', ' ').title()}: error")
+                    lines.append(f"  • {label}: error")
 
             lines.insert(1, f"Total: {total}")
             return "\n".join(lines)

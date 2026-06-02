@@ -25,7 +25,7 @@ from ..client import get_api_client, get_total, parse_date, format_bus
 
 def _build_asset_kwargs(page, page_size, asset_name=None, statuses=None,
                         business_unit_ids=None, created_from=None, created_to=None,
-                        source=None, integration_connections=None,
+                        source=None,
                         custom_property_key=None, custom_property_value=None):
     kwargs = {"page": page, "page_size": min(page_size, 30)}
     if asset_name:
@@ -40,8 +40,6 @@ def _build_asset_kwargs(page, page_size, asset_name=None, statuses=None,
         kwargs["created_to"] = parse_date(created_to)
     if source:
         kwargs["source"] = source
-    if integration_connections:
-        kwargs["integration_connections"] = integration_connections
     if custom_property_key:
         kwargs["custom_property_key"] = custom_property_key
     if custom_property_value:
@@ -66,7 +64,6 @@ def register_asset_tools(mcp):
         created_from: str = None,
         created_to: str = None,
         source: str = None,
-        integration_connections: str = None,
         custom_property_key: str = None,
         custom_property_value: str = None,
         match_type: str = None,
@@ -82,7 +79,6 @@ def register_asset_tools(mcp):
             created_from: Start date (YYYY-MM-DD).
             created_to: End date (YYYY-MM-DD).
             source: Filter assets by the source that discovered the asset.
-            integration_connections: Filter assets by integration connections.
             custom_property_key: Filter assets by custom property key.
             custom_property_value: Filter assets by custom property value.
             match_type: Filter by match type ('exact' or 'partial').
@@ -93,7 +89,7 @@ def register_asset_tools(mcp):
             api = IPAddressesApi(get_api_client())
             kwargs = _build_asset_kwargs(
                 page, page_size, asset_name, statuses, business_unit_ids,
-                created_from, created_to, source, integration_connections,
+                created_from, created_to, source,
                 custom_property_key, custom_property_value
             )
             if match_type:
@@ -255,7 +251,6 @@ def register_asset_tools(mcp):
         created_from: str = None,
         created_to: str = None,
         source: str = None,
-        integration_connections: str = None,
         custom_property_key: str = None,
         custom_property_value: str = None,
         page: int = 1,
@@ -270,7 +265,6 @@ def register_asset_tools(mcp):
             created_from: Start date (YYYY-MM-DD).
             created_to: End date (YYYY-MM-DD).
             source: Filter assets by the source that discovered the asset.
-            integration_connections: Filter assets by integration connections.
             custom_property_key: Filter assets by custom property key.
             custom_property_value: Filter assets by custom property value.
             page: Page number.
@@ -280,7 +274,7 @@ def register_asset_tools(mcp):
             api = DomainsApi(get_api_client())
             kwargs = _build_asset_kwargs(
                 page, page_size, asset_name, statuses, business_unit_ids,
-                created_from, created_to, source, integration_connections,
+                created_from, created_to, source,
                 custom_property_key, custom_property_value
             )
             response = api.get_list_asset_domains(**_filter_kwargs(api.get_list_asset_domains, kwargs))
@@ -346,7 +340,6 @@ def register_asset_tools(mcp):
         created_from: str = None,
         created_to: str = None,
         source: str = None,
-        integration_connections: str = None,
         custom_property_key: str = None,
         custom_property_value: str = None,
         page: int = 1,
@@ -361,7 +354,6 @@ def register_asset_tools(mcp):
             created_from: Start date (YYYY-MM-DD).
             created_to: End date (YYYY-MM-DD).
             source: Filter assets by the source that discovered the asset.
-            integration_connections: Filter assets by integration connections.
             custom_property_key: Filter assets by custom property key.
             custom_property_value: Filter assets by custom property value.
             page: Page number.
@@ -371,7 +363,7 @@ def register_asset_tools(mcp):
             api = SubdomainsApi(get_api_client())
             kwargs = _build_asset_kwargs(
                 page, page_size, asset_name, statuses, business_unit_ids,
-                created_from, created_to, source, integration_connections,
+                created_from, created_to, source,
                 custom_property_key, custom_property_value
             )
             response = api.get_list_asset_subdomains(**_filter_kwargs(api.get_list_asset_subdomains, kwargs))
@@ -437,7 +429,6 @@ def register_asset_tools(mcp):
         created_from: str = None,
         created_to: str = None,
         source: str = None,
-        integration_connections: str = None,
         custom_property_key: str = None,
         custom_property_value: str = None,
         include_closed_port: bool = None,
@@ -454,7 +445,6 @@ def register_asset_tools(mcp):
             created_from: Start date (YYYY-MM-DD).
             created_to: End date (YYYY-MM-DD).
             source: Filter assets by the source that discovered the asset.
-            integration_connections: Filter assets by integration connections.
             custom_property_key: Filter assets by custom property key.
             custom_property_value: Filter assets by custom property value.
             include_closed_port: Include listings with closed ports.
@@ -466,7 +456,7 @@ def register_asset_tools(mcp):
             api = PortsApi(get_api_client())
             kwargs = _build_asset_kwargs(
                 page, page_size, asset_name, statuses, business_unit_ids,
-                created_from, created_to, source, integration_connections,
+                created_from, created_to, source,
                 custom_property_key, custom_property_value
             )
             if include_closed_port is not None:
@@ -539,7 +529,6 @@ def register_asset_tools(mcp):
         created_from: str = None,
         created_to: str = None,
         source: str = None,
-        integration_connections: str = None,
         custom_property_key: str = None,
         custom_property_value: str = None,
         page: int = 1,
@@ -554,7 +543,6 @@ def register_asset_tools(mcp):
             created_from: Start date (YYYY-MM-DD).
             created_to: End date (YYYY-MM-DD).
             source: Filter assets by the source that discovered the asset.
-            integration_connections: Filter assets by integration connections.
             custom_property_key: Filter assets by custom property key.
             custom_property_value: Filter assets by custom property value.
             page: Page number.
@@ -564,7 +552,7 @@ def register_asset_tools(mcp):
             api = IPRangesApi(get_api_client())
             kwargs = _build_asset_kwargs(
                 page, page_size, asset_name, statuses, business_unit_ids,
-                created_from, created_to, source, integration_connections,
+                created_from, created_to, source,
                 custom_property_key, custom_property_value
             )
             response = api.get_list_asset_ipranges(**_filter_kwargs(api.get_list_asset_ipranges, kwargs))
@@ -641,7 +629,6 @@ def register_asset_tools(mcp):
         created_from: str = None,
         created_to: str = None,
         source: str = None,
-        integration_connections: str = None,
         custom_property_key: str = None,
         custom_property_value: str = None,
         page: int = 1,
@@ -656,7 +643,6 @@ def register_asset_tools(mcp):
             created_from: Start date (YYYY-MM-DD).
             created_to: End date (YYYY-MM-DD).
             source: Filter assets by the source that discovered the asset.
-            integration_connections: Filter assets by integration connections.
             custom_property_key: Filter assets by custom property key.
             custom_property_value: Filter assets by custom property value.
             page: Page number.
@@ -666,7 +652,7 @@ def register_asset_tools(mcp):
             api = CloudStorageApi(get_api_client())
             kwargs = _build_asset_kwargs(
                 page, page_size, asset_name, statuses, business_unit_ids,
-                created_from, created_to, source, integration_connections,
+                created_from, created_to, source,
                 custom_property_key, custom_property_value
             )
             response = api.get_list_asset_cloud_storages(**_filter_kwargs(api.get_list_asset_cloud_storages, kwargs))
@@ -738,7 +724,6 @@ def register_asset_tools(mcp):
         created_from: str = None,
         created_to: str = None,
         source: str = None,
-        integration_connections: str = None,
         custom_property_key: str = None,
         custom_property_value: str = None,
         page: int = 1,
@@ -753,7 +738,6 @@ def register_asset_tools(mcp):
             created_from: Start date (YYYY-MM-DD).
             created_to: End date (YYYY-MM-DD).
             source: Filter assets by the source that discovered the asset.
-            integration_connections: Filter assets by integration connections.
             custom_property_key: Filter assets by custom property key.
             custom_property_value: Filter assets by custom property value.
             page: Page number.
@@ -763,7 +747,7 @@ def register_asset_tools(mcp):
             api = RepositoriesApi(get_api_client())
             kwargs = _build_asset_kwargs(
                 page, page_size, asset_name, statuses, business_unit_ids,
-                created_from, created_to, source, integration_connections,
+                created_from, created_to, source,
                 custom_property_key, custom_property_value
             )
             response = api.get_list_asset_repositories(**_filter_kwargs(api.get_list_asset_repositories, kwargs))
@@ -835,7 +819,6 @@ def register_asset_tools(mcp):
         created_from: str = None,
         created_to: str = None,
         source: str = None,
-        integration_connections: str = None,
         custom_property_key: str = None,
         custom_property_value: str = None,
         page: int = 1,
@@ -850,7 +833,6 @@ def register_asset_tools(mcp):
             created_from: Start date (YYYY-MM-DD).
             created_to: End date (YYYY-MM-DD).
             source: Filter assets by the source that discovered the asset.
-            integration_connections: Filter assets by integration connections.
             custom_property_key: Filter assets by custom property key.
             custom_property_value: Filter assets by custom property value.
             page: Page number.
@@ -860,7 +842,7 @@ def register_asset_tools(mcp):
             api = ContainersApi(get_api_client())
             kwargs = _build_asset_kwargs(
                 page, page_size, asset_name, statuses, business_unit_ids,
-                created_from, created_to, source, integration_connections,
+                created_from, created_to, source,
                 custom_property_key, custom_property_value
             )
             response = api.get_list_asset_container(**_filter_kwargs(api.get_list_asset_container, kwargs))
@@ -933,7 +915,6 @@ def register_asset_tools(mcp):
         created_from: str = None,
         created_to: str = None,
         source: str = None,
-        integration_connections: str = None,
         custom_property_key: str = None,
         custom_property_value: str = None,
         page: int = 1,
@@ -948,7 +929,6 @@ def register_asset_tools(mcp):
             created_from: Start date (YYYY-MM-DD).
             created_to: End date (YYYY-MM-DD).
             source: Filter assets by the source that discovered the asset.
-            integration_connections: Filter assets by integration connections.
             custom_property_key: Filter assets by custom property key.
             custom_property_value: Filter assets by custom property value.
             page: Page number.
@@ -958,7 +938,7 @@ def register_asset_tools(mcp):
             api = SaaSPlatformsApi(get_api_client())
             kwargs = _build_asset_kwargs(
                 page, page_size, asset_name, statuses, business_unit_ids,
-                created_from, created_to, source, integration_connections,
+                created_from, created_to, source,
                 custom_property_key, custom_property_value
             )
             response = api.get_list_asset_saas_platforms(**_filter_kwargs(api.get_list_asset_saas_platforms, kwargs))
@@ -1027,7 +1007,6 @@ def register_asset_tools(mcp):
         created_from: str = None,
         created_to: str = None,
         source: str = None,
-        integration_connections: str = None,
         custom_property_key: str = None,
         custom_property_value: str = None,
         page: int = 1,
@@ -1042,7 +1021,6 @@ def register_asset_tools(mcp):
             created_from: Start date (YYYY-MM-DD).
             created_to: End date (YYYY-MM-DD).
             source: Filter assets by the source that discovered the asset.
-            integration_connections: Filter assets by integration connections.
             custom_property_key: Filter assets by custom property key.
             custom_property_value: Filter assets by custom property value.
             page: Page number.
@@ -1052,7 +1030,7 @@ def register_asset_tools(mcp):
             api = MobileApplicationsApi(get_api_client())
             kwargs = _build_asset_kwargs(
                 page, page_size, asset_name, statuses, business_unit_ids,
-                created_from, created_to, source, integration_connections,
+                created_from, created_to, source,
                 custom_property_key, custom_property_value
             )
             response = api.get_list_asset_mobile_apps(**_filter_kwargs(api.get_list_asset_mobile_apps, kwargs))
@@ -1123,7 +1101,6 @@ def register_asset_tools(mcp):
         created_from: str = None,
         created_to: str = None,
         source: str = None,
-        integration_connections: str = None,
         custom_property_key: str = None,
         custom_property_value: str = None,
         provider: str = None,
@@ -1141,7 +1118,6 @@ def register_asset_tools(mcp):
             created_from: Start date (YYYY-MM-DD).
             created_to: End date (YYYY-MM-DD).
             source: Filter assets by the source that discovered the asset.
-            integration_connections: Filter assets by integration connections.
             custom_property_key: Filter assets by custom property key.
             custom_property_value: Filter assets by custom property value.
             provider: Filter assets by cloud provider.
@@ -1154,7 +1130,7 @@ def register_asset_tools(mcp):
             api = CloudIntegrationAssetsApi(get_api_client())
             kwargs = _build_asset_kwargs(
                 page, page_size, asset_name, statuses, business_unit_ids,
-                created_from, created_to, source, integration_connections,
+                created_from, created_to, source,
                 custom_property_key, custom_property_value
             )
             if provider:
@@ -1244,7 +1220,6 @@ def register_asset_tools(mcp):
         created_from: str = None,
         created_to: str = None,
         source: str = None,
-        integration_connections: str = None,
         custom_property_key: str = None,
         custom_property_value: str = None,
         page: int = 1,
@@ -1259,7 +1234,6 @@ def register_asset_tools(mcp):
             created_from: Start date (YYYY-MM-DD).
             created_to: End date (YYYY-MM-DD).
             source: Filter assets by the source that discovered the asset.
-            integration_connections: Filter assets by integration connections.
             custom_property_key: Filter assets by custom property key.
             custom_property_value: Filter assets by custom property value.
             page: Page number.
@@ -1269,7 +1243,7 @@ def register_asset_tools(mcp):
             api = APIDocumentationApi(get_api_client())
             kwargs = _build_asset_kwargs(
                 page, page_size, asset_name, statuses, business_unit_ids,
-                created_from, created_to, source, integration_connections,
+                created_from, created_to, source,
                 custom_property_key, custom_property_value
             )
             response = api.get_list_asset_api_documentation(**_filter_kwargs(api.get_list_asset_api_documentation, kwargs))
@@ -1339,7 +1313,6 @@ def register_asset_tools(mcp):
         created_from: str = None,
         created_to: str = None,
         source: str = None,
-        integration_connections: str = None,
         custom_property_key: str = None,
         custom_property_value: str = None,
         page: int = 1,
@@ -1354,7 +1327,6 @@ def register_asset_tools(mcp):
             created_from: Start date (YYYY-MM-DD).
             created_to: End date (YYYY-MM-DD).
             source: Filter assets by the source that discovered the asset.
-            integration_connections: Filter assets by integration connections.
             custom_property_key: Filter assets by custom property key.
             custom_property_value: Filter assets by custom property value.
             page: Page number.
@@ -1364,7 +1336,7 @@ def register_asset_tools(mcp):
             api = PackageManagersApi(get_api_client())
             kwargs = _build_asset_kwargs(
                 page, page_size, asset_name, statuses, business_unit_ids,
-                created_from, created_to, source, integration_connections,
+                created_from, created_to, source,
                 custom_property_key, custom_property_value
             )
             response = api.get_list_asset_package_managers(**_filter_kwargs(api.get_list_asset_package_managers, kwargs))

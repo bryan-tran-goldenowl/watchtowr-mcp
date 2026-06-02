@@ -62,20 +62,9 @@ def live_env():
 @pytest.fixture(scope="session")
 def tools() -> dict[str, callable]:
     """Every @mcp.tool() function in the server, keyed by function name."""
-    # Force tests to load all modules so we can verify all 88 tools
-    original_modules = os.environ.get("WATCHTOWR_ENABLED_MODULES")
-    os.environ["WATCHTOWR_ENABLED_MODULES"] = "all"
-    
     apply_watchtowr_sdk_compat_patches()
     capture = ToolCapture()
     register_all_tools(capture)
-    
-    # Restore original environment
-    if original_modules is not None:
-        os.environ["WATCHTOWR_ENABLED_MODULES"] = original_modules
-    else:
-        del os.environ["WATCHTOWR_ENABLED_MODULES"]
-        
     return capture.tools
 
 

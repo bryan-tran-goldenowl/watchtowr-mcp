@@ -10,7 +10,7 @@ dependencies = [
     "pydantic>=2.12.5",
     "python-dateutil>=2.9.0.post0",
     "urllib3>=2.6.3",
-    "watchtowr-api",
+    "watchtowr-api-sdk",
 ]
 
 [project.scripts]
@@ -24,7 +24,7 @@ build-backend = "hatchling.build"
 packages = ["watchtowr_mcp_server"]
 
 [tool.uv.sources]
-watchtowr-api = { path = "watchtowr-api-sdk", editable = true }
+watchtowr-api-sdk = { path = "watchtowr-api-sdk", editable = true }
 
 [tool.uv]
 # The SDK's setup.py pins urllib3 < 2.1.0 conservatively, but the MCP server

@@ -35,7 +35,6 @@ def register_incident_tools(mcp):
             client = get_api_client()
             lines = [f"Assets in Country: {country_code.upper()}", ""]
 
-            lines.append("Note: Direct IP search by country is not supported by the API. Showing services.")
             lines.append("")
 
             svc_api = ServiceDiscoveryApi(client)
@@ -153,10 +152,10 @@ def register_incident_tools(mcp):
                            "risk-accepted", "closed", "asset-no-longer-tracked"]:
                 if status in status_groups:
                     findings = status_groups.pop(status)
-                    lines.append(f"{status} ({len(findings)}):")
-                    for f in findings:
-                        lines.append(f"  • {f}")
-                    lines.append("")
+                lines.append(f"{status} ({len(findings)}):")
+                for f in findings:
+                    lines.append(f"  • {f}")
+                lines.append("")
 
             for status, findings in status_groups.items():
                 lines.append(f"{status} ({len(findings)}):")

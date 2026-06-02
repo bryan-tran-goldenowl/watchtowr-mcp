@@ -42,7 +42,7 @@ def register_workflow_tools(mcp):
                 fid = getattr(f, 'id', '')
                 sev = severity_display(getattr(f, 'severity', None))
                 title = getattr(f, 'title', 'No title')
-                lines.append(f"• [ID:{fid}] [{sev}] {title}")
+                lines.append(f"- [ID:{fid}] [{sev}] {title}")
 
             return "\n".join(lines)
         except Exception as e:
@@ -70,7 +70,7 @@ def register_workflow_tools(mcp):
 
             lines.append(f"New Findings: {new_findings}")
             for sev, count in findings_by_sev.items():
-                lines.append(f"  • {severity_display(sev)}: +{count}")
+                lines.append(f"  - {severity_display(sev)}: +{count}")
             lines.append("")
 
             new_assets = 0
@@ -80,7 +80,7 @@ def register_workflow_tools(mcp):
                     c = _count(api_cls(client), method_name, created_from=since)
                     if c > 0:
                         new_assets += c
-                        asset_lines.append(f"  • {label}: +{c}")
+                        asset_lines.append(f"  - {label}: +{c}")
                 except Exception:
                     pass
 
@@ -100,7 +100,7 @@ def register_workflow_tools(mcp):
                         desc = getattr(log, 'description', '')
                         causer = getattr(log, 'caused_by', None)
                         user = getattr(causer, 'name', 'System') if causer else 'System'
-                        lines.append(f"  • {user}: {desc}")
+                        lines.append(f"  - {user}: {desc}")
             except Exception:
                 lines.append("Activity Logs: error")
 
@@ -127,9 +127,9 @@ def register_workflow_tools(mcp):
             for fid in ids:
                 try:
                     findings_api.start_specific_finding_retest(finding_id=fid)
-                    results.append(f"• Finding {fid}: retest initiated")
+                    results.append(f"- Finding {fid}: retest initiated")
                 except Exception as e:
-                    results.append(f"• Finding {fid}: error - {e}")
+                    results.append(f"- Finding {fid}: error - {e}")
 
             return f"Bulk Retest Results ({len(ids)} findings):\n" + "\n".join(results)
         except Exception as e:
@@ -164,9 +164,9 @@ def register_workflow_tools(mcp):
                         
                         update_client_finding_status_request_body=body,
                     )
-                    results.append(f"• Finding {fid}: updated to {status_lower}")
+                    results.append(f"- Finding {fid}: updated to {status_lower}")
                 except Exception as e:
-                    results.append(f"• Finding {fid}: error - {e}")
+                    results.append(f"- Finding {fid}: error - {e}")
 
             return f"Bulk Status Update ({len(ids)} findings → {status_lower}):\n" + "\n".join(results)
         except Exception as e:
@@ -261,7 +261,7 @@ def register_workflow_tools(mcp):
                                 fid = getattr(f, 'id', '')
                                 title = getattr(f, 'title', 'No title')
                                 created = getattr(f, 'created_at', '')
-                                lines.append(f"  • [ID:{fid}] {title} (since {created})")
+                                lines.append(f"  - [ID:{fid}] {title} (since {created})")
                             if count > 10:
                                 lines.append(f"  ... and {count - 10} more")
                         lines.append("")

@@ -30,6 +30,7 @@ CATEGORY_MAP = {
     "Reporting & Compliance": ("reporting.py", 11),
     "Incident Response": ("incident.py", 5),
     "Workflow & Automation": ("workflow.py", 6),
+    "Intelligence": ("intelligence.py", 9),
 }
 
 
@@ -93,7 +94,7 @@ def test_category_tool_count_matches_readme_heading(category, filename, expected
     )
 
 
-def test_total_tool_count_is_95():
-    """README.md line 7 claims '95 tools'."""
+def test_total_tool_count_is_104():
+    """README.md line 7 claims '104 tools'."""
     total = sum(len(_tool_names_in_file(TOOLS_DIR / fn)) for fn, _ in CATEGORY_MAP.values())
-    assert total == 95, f"Expected 95 tools across all categories, found {total}"
+    assert total == 104, f"Expected 104 tools across all categories, found {total}"
