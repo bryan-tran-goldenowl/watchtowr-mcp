@@ -17,8 +17,16 @@ from watchtowr_api_sdk.models.update_client_next_gen_asset_status_dto import Upd
 from watchtowr_api_sdk.models.update_client_cloud_asset_status_dto import UpdateClientCloudAssetStatusDto
 from watchtowr_api_sdk.models.update_api_documentation_status_dto import UpdateApiDocumentationStatusDto
 from watchtowr_api_sdk.models.create_client_seed_data_request_body import CreateClientSeedDataRequestBody
-from watchtowr_api_sdk.models.client_seed_data import ClientSeedData
+from watchtowr_api_sdk.models.client_seed_data_dto import ClientSeedDataDto
 import inspect
+from watchtowr_api_sdk.models.ip_range_values import IpRangeValues
+from watchtowr_api_sdk.models.filter_by_business_unit_input import FilterByBusinessUnitInput
+
+VALID_SEED_ASSET_TYPES = [
+    "domain", "subdomain", "ip", "ipRange", "repository",
+    "cloudStorage", "container", "mobileApp", "saasPlatform",
+    "apiDocumentation", "packageManager",
+]
 
 from ..client import get_api_client, get_total, parse_date, format_bus
 
@@ -1474,29 +1482,70 @@ def register_asset_tools(mcp):
     @mcp.tool()
     def add_seed_asset(
         asset_type: str,
-        asset_value: str,
+        asset_value: str = None,
         asset_title: str = None,
+        cidr: str = None,
+        asn: str = None,
+        business_unit_ids: list[int] = None,
     ) -> str:
         """Submit a new seed asset for discovery and monitoring.
 
         Args:
-            asset_type: Asset type (e.g. domain, ip, ip_range).
-            asset_value: The asset value (e.g. "example.com", "1.2.3.4").
-            asset_title: Optional display title for the asset.
+            asset_type: Asset type. Valid types: domain, subdomain, ip, ipRange, repository,
+                cloudStorage, container, mobileApp, saasPlatform, apiDocumentation, packageManager.
+            asset_value: The asset value (e.g. "example.com", "1.2.3.4"). Not required for ipRange.
+            asset_title: Optional display title. Defaults to asset_value or a generated title.
+            cidr: CIDR notation for IP range (required when asset_type == "ipRange").
+            asn: ASN for IP range (required when asset_type == "ipRange").
+            business_unit_ids: Optional list of business unit IDs to assign the asset.
         """
+        
+        if asset_type not in VALID_SEED_ASSET_TYPES:
+            return f"Error: Invalid asset_type '{asset_type}'. Valid types: {', '.join(VALID_SEED_ASSET_TYPES)}"
+
+        if asset_type == "ipRange":
+            if not cidr or not asn:
+                return "Error: 'cidr' and 'asn' are required when asset_type is 'ipRange'"
+        else:
+            if not asset_value:
+                return "Error: 'asset_value' is required for non-ipRange types"
+
+        
         try:
             api = AddAssetApi(get_api_client())
-            seed = ClientSeedData(
-                title=asset_title or asset_value,
+
+            ip_range_values = None
+            if asset_type == "ipRange":
+                ip_range_values = IpRangeValues(cidr=cidr, asn=asn)
+
+            seed = ClientSeedDataDto(
+                title=asset_title or asset_value or f"{cidr} ({asn})",
                 type=asset_type,
-                value=asset_value,
+                value=asset_value or cidr,
+                values=ip_range_values,
             )
-            body = CreateClientSeedDataRequestBody(data=[seed])
+
+            business_units = None
+            if business_unit_ids:
+                business_units = [
+                    FilterByBusinessUnitInput(id=bu_id, type="BUSINESS_UNIT")
+                    for bu_id in business_unit_ids
+                ]
+
+            body = CreateClientSeedDataRequestBody(data=[seed], business_units=business_units)
             response = api.submit_asset(create_client_seed_data_request_body=body)
 
-            data = response.data if hasattr(response, 'data') else response
-            return f"Seed asset submitted: {asset_type} = {asset_value}" + (
-                f" (title: {asset_title})" if asset_title else ""
-            )
+            # ── Format response ──
+            lines = ["✓ Seed asset submitted successfully:"]
+            lines.append(f"  • Type: {asset_type}")
+            lines.append(f"  • Title: {asset_title or asset_value or f'{cidr} ({asn})'}")
+            if asset_type == "ipRange":
+                lines.append(f"  • CIDR: {cidr}")
+                lines.append(f"  • ASN: {asn}")
+            else:
+                lines.append(f"  • Value: {asset_value}")
+            if business_unit_ids:
+                lines.append(f"  • Business Units: {business_unit_ids}")
+            return "\n".join(lines)
         except Exception as e:
             return f"Error submitting seed asset: {e}"

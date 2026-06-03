@@ -150,8 +150,9 @@ def register_incident_tools(mcp):
             # Display in canonical status order (API statuses are lowercase).
             for status in ["unconfirmed", "confirmed", "remediated",
                            "risk-accepted", "closed", "asset-no-longer-tracked"]:
-                if status in status_groups:
-                    findings = status_groups.pop(status)
+                findings = status_groups.pop(status, [])
+                if not findings:
+                    continue
                 lines.append(f"{status} ({len(findings)}):")
                 for f in findings:
                     lines.append(f"  • {f}")
