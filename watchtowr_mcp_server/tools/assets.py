@@ -1584,36 +1584,27 @@ def register_asset_tools(mcp):
         if action not in ("get", "update"):
             return "Error: action must be one of: get, update"
 
-        required_update_fields = {
-            "adversary_sight_enabled": adversary_sight_enabled,
-            "dns_bruteforcing_enabled": dns_bruteforcing_enabled,
-            "automated_red_teaming_enabled": automated_red_teaming_enabled,
-            "credential_stuffing_enabled": credential_stuffing_enabled,
-            "rapid_reaction_enabled": rapid_reaction_enabled,
-        }
-        if action == "update":
-            missing = [name for name, value in required_update_fields.items() if value is None]
-            if missing:
-                return f"Error: {', '.join(missing)} required when action is 'update'"
-
         try:
             api = ASSET_API_CLASSES[asset_type](get_api_client())
             methods = ENGINE_SETTINGS_METHODS[asset_type]
+            current = _unwrap_data(getattr(api, methods["get"])(id=asset_id))
             if action == "get":
-                response = getattr(api, methods["get"])(id=asset_id)
-            else:
-                dto = UpdateClientEngineSettingsDto(
-                    adversary_sight_enabled=adversary_sight_enabled,
-                    dns_bruteforcing_enabled=dns_bruteforcing_enabled,
-                    automated_red_teaming_enabled=automated_red_teaming_enabled,
-                    intrusive_http_checks_enabled=intrusive_http_checks_enabled if intrusive_http_checks_enabled is not None else False,
-                    credential_stuffing_enabled=credential_stuffing_enabled,
-                    rapid_reaction_enabled=rapid_reaction_enabled,
-                )
-                response = getattr(api, methods["update"])(
-                    id=asset_id,
-                    update_client_engine_settings_dto=dto,
-                )
+                return _format_engine_settings(asset_type, asset_id, current)
+            # Fetch-then-merge: omitted fields preserve current settings
+            def _merge(caller_val, attr):
+                return caller_val if caller_val is not None else getattr(current, attr, False)
+            dto = UpdateClientEngineSettingsDto(
+                adversary_sight_enabled=_merge(adversary_sight_enabled, "adversary_sight_enabled"),
+                dns_bruteforcing_enabled=_merge(dns_bruteforcing_enabled, "dns_bruteforcing_enabled"),
+                automated_red_teaming_enabled=_merge(automated_red_teaming_enabled, "automated_red_teaming_enabled"),
+                intrusive_http_checks_enabled=_merge(intrusive_http_checks_enabled, "intrusive_http_checks_enabled"),
+                credential_stuffing_enabled=_merge(credential_stuffing_enabled, "credential_stuffing_enabled"),
+                rapid_reaction_enabled=_merge(rapid_reaction_enabled, "rapid_reaction_enabled"),
+            )
+            response = getattr(api, methods["update"])(
+                id=asset_id,
+                update_client_engine_settings_dto=dto,
+            )
             return _format_engine_settings(asset_type, asset_id, _unwrap_data(response))
         except Exception as e:
             return f"Error: {e}"
@@ -1799,7 +1790,7 @@ def register_asset_tools(mcp):
         """Update the status of any asset type.
 
         Args:
-            asset_type: One of: domain, subdomain, ip, ip_range, container, cloud_storage, saas_platform, mobile_app, repository, cloud_asset, api_documentation, package_manager.
+            asset_type: One of: domain, subdomain, ip, ipRange, container, cloudStorage, saasPlatform, mobileApp, repository, cloudAsset, apiDocumentation, packageManager (snake_case aliases also accepted).
             asset_id: The asset ID to update.
             status: The new status value.
             status_reason: Optional reason for the status change.
@@ -1807,21 +1798,30 @@ def register_asset_tools(mcp):
         try:
             client = get_api_client()
 
+            ASSET_TYPE_ALIASES = {
+                "ip_range": "ipRange", "cloud_storage": "cloudStorage",
+                "saas_platform": "saasPlatform", "mobile_app": "mobileApp",
+                "cloud_asset": "cloudAsset", "api_documentation": "apiDocumentation",
+                "package_manager": "packageManager",
+            }
+            if asset_type in ASSET_TYPE_ALIASES:
+                asset_type = ASSET_TYPE_ALIASES[asset_type]
+
             legacy_types = {
                 "domain": (DomainsApi, "update_asset_domain_status"),
                 "subdomain": (SubdomainsApi, "update_asset_subdomain_status"),
                 "ip": (IPAddressesApi, "update_asset_ip_status"),
-                "ip_range": (IPRangesApi, "update_asset_ip_range_status"),
+                "ipRange": (IPRangesApi, "update_asset_ip_range_status"),
             }
             nextgen_types = {
                 "container": (ContainersApi, "update_asset_container_status"),
-                "cloud_storage": (CloudStorageApi, "update_asset_cloud_storage_status"),
-                "saas_platform": (SaaSPlatformsApi, "update_asset_saas_platform_status"),
-                "mobile_app": (MobileApplicationsApi, "update_asset_mobile_app_status"),
+                "cloudStorage": (CloudStorageApi, "update_asset_cloud_storage_status"),
+                "saasPlatform": (SaaSPlatformsApi, "update_asset_saas_platform_status"),
+                "mobileApp": (MobileApplicationsApi, "update_asset_mobile_app_status"),
                 "repository": (RepositoriesApi, "update_asset_repository_status"),
-                "cloud_asset": (CloudIntegrationAssetsApi, "update_asset_cloud_asset_status"),
-                "api_documentation": (APIDocumentationApi, "update_asset_api_documentation_status"),
-                "package_manager": (PackageManagersApi, "update_asset_package_manager_status"),
+                "cloudAsset": (CloudIntegrationAssetsApi, "update_asset_cloud_asset_status"),
+                "apiDocumentation": (APIDocumentationApi, "update_asset_api_documentation_status"),
+                "packageManager": (PackageManagersApi, "update_asset_package_manager_status"),
             }
 
             if asset_type in legacy_types:
@@ -1840,10 +1840,10 @@ def register_asset_tools(mcp):
                 if status_reason:
                     dto_kwargs["status_reason"] = status_reason
 
-                if asset_type == "cloud_asset":
+                if asset_type == "cloudAsset":
                     dto = UpdateClientCloudAssetStatusDto(**dto_kwargs)
                     param_name = "update_client_cloud_asset_status_dto"
-                elif asset_type == "api_documentation":
+                elif asset_type == "apiDocumentation":
                     dto = UpdateApiDocumentationStatusDto(**dto_kwargs)
                     param_name = "update_api_documentation_status_dto"
                 else:

@@ -107,6 +107,40 @@ def sample_finding_id(live_env, call) -> int:
 
 
 @pytest.fixture(scope="session")
+def sample_retestable_finding_id(live_env, call) -> int:
+    """Return the first finding that can be retested (remaining > 0, no active retest)."""
+    response = call("search_findings", page_size=30)
+    if isinstance(response, str) and response.startswith("Error"):
+        pytest.skip(f"search_findings returned error: {response!r}")
+
+    ids = ID_PATTERN.findall(response)
+    if not ids:
+        pytest.skip("no findings returned by search_findings")
+
+    for fid_str in ids:
+        fid = int(fid_str)
+        details = call("get_finding_details", finding_id=fid)
+        if not isinstance(details, str) or details.startswith("Error"):
+            continue
+        remaining = None
+        for line in details.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("Retests Remaining:"):
+                try:
+                    remaining = int(stripped.split(":", 1)[1].strip())
+                except ValueError:
+                    pass
+                break
+        if not remaining or remaining <= 0:
+            continue
+        if any("Current Retest:" in line for line in details.splitlines()):
+            continue
+        return fid
+
+    pytest.skip("no retestable finding found in this tenant (remaining=0 or active retest on all)")
+
+
+@pytest.fixture(scope="session")
 def sample_hunt_id(live_env, call) -> int:
     return _sample_via_list(call, "search_hunts", "hunts", page_size=5)
 
