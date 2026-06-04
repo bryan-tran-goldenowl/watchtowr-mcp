@@ -22,9 +22,12 @@ def test_list_points_of_interest(live_env, call):
 
 
 def test_list_points_of_interest_with_type_filter(live_env, call):
-    """Regression for BUG-6: SDK types POI `types` as List[str]. Passing a type
-    filter must not raise a pydantic validation error."""
     resp = call("list_points_of_interest", types="Leaked Credential", page_size=5)
+    assert_ok(resp, allow_empty=True)
+
+
+def test_list_points_of_interest_with_has_finding_filter(live_env, call):
+    resp = call("list_points_of_interest", has_finding=True, page_size=5)
     assert_ok(resp, allow_empty=True)
 
 

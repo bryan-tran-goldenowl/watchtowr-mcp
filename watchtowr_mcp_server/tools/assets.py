@@ -18,6 +18,13 @@ from watchtowr_api_sdk.models.update_client_cloud_asset_status_dto import Update
 from watchtowr_api_sdk.models.update_api_documentation_status_dto import UpdateApiDocumentationStatusDto
 from watchtowr_api_sdk.models.create_client_seed_data_request_body import CreateClientSeedDataRequestBody
 from watchtowr_api_sdk.models.client_seed_data_dto import ClientSeedDataDto
+from watchtowr_api_sdk.models.update_client_engine_settings_dto import UpdateClientEngineSettingsDto
+from watchtowr_api_sdk.models.set_criticality_dto import SetCriticalityDto
+from watchtowr_api_sdk.models.asset_business_unit_ids_dto import AssetBusinessUnitIdsDTO
+from watchtowr_api_sdk.models.hostname_business_unit_ids_dto import HostnameBusinessUnitIDsDTO
+from watchtowr_api_sdk.models.create_client_custom_property_dto import CreateClientCustomPropertyDto
+from watchtowr_api_sdk.models.update_client_custom_property_dto import UpdateClientCustomPropertyDto
+from watchtowr_api_sdk.models.create_client_note_dto import CreateClientNoteDto
 import inspect
 from watchtowr_api_sdk.models.ip_range_values import IpRangeValues
 from watchtowr_api_sdk.models.filter_by_business_unit_input import FilterByBusinessUnitInput
@@ -30,6 +37,160 @@ VALID_SEED_ASSET_TYPES = [
 
 from ..client import get_api_client, get_total, parse_date, format_bus
 
+
+ALL_ASSET_TYPES = [
+    "domain", "subdomain", "ip", "ipRange", "cloudStorage", "container",
+    "repository", "mobileApp", "saasPlatform", "cloudAsset", "apiDocumentation",
+    "packageManager",
+]
+
+ENGINE_SETTINGS_TYPES = ["domain", "subdomain", "ip"]
+CRITICALITY_VALUES = ["High", "Medium", "Low", "Unknown"]
+
+ASSET_API_CLASSES = {
+    "domain": DomainsApi,
+    "subdomain": SubdomainsApi,
+    "ip": IPAddressesApi,
+    "ipRange": IPRangesApi,
+    "cloudStorage": CloudStorageApi,
+    "container": ContainersApi,
+    "repository": RepositoriesApi,
+    "mobileApp": MobileApplicationsApi,
+    "saasPlatform": SaaSPlatformsApi,
+    "cloudAsset": CloudIntegrationAssetsApi,
+    "apiDocumentation": APIDocumentationApi,
+    "packageManager": PackageManagersApi,
+}
+
+ENGINE_SETTINGS_METHODS = {
+    "domain": {"get": "get_asset_domain_engine_settings", "update": "update_asset_domain_engine_settings"},
+    "subdomain": {"get": "get_asset_subdomain_engine_settings", "update": "update_asset_subdomain_engine_settings"},
+    "ip": {"get": "get_asset_ip_engine_settings", "update": "update_asset_ip_engine_settings"},
+}
+
+CRITICALITY_METHODS = {
+    "domain": "set_criticality_domain",
+    "subdomain": "set_criticality_subdomain",
+    "ip": "set_criticality_ip",
+    "ipRange": "set_criticality_ip_range",
+    "cloudStorage": "set_criticality_cloud_storage",
+    "container": "set_criticality_container",
+    "repository": "set_criticality_repository",
+    "mobileApp": "set_criticality_mobile_app",
+    "saasPlatform": "set_criticality_saas_platform",
+    "cloudAsset": "set_criticality_cloud_asset",
+    "apiDocumentation": "set_criticality_api_documentation",
+    "packageManager": "set_criticality_package_manager",
+}
+
+BUSINESS_UNIT_METHODS = {
+    "domain": {"assign": "assign_domain_to_business_units", "unassign": "unassign_domain_from_business_units"},
+    "subdomain": {"assign": "assign_subomain_to_business_units", "unassign": "unassign_subomain_from_business_units"},
+    "ip": {"assign": "assign_ip_to_business_units", "unassign": "unassign_ip_from_business_units"},
+    "ipRange": {"assign": "assign_ip_range_to_business_units", "unassign": "unassign_ip_range_from_business_units"},
+    "cloudStorage": {"assign": "assign_cloud_storage_to_business_units", "unassign": "unassign_cloud_storage_from_business_units"},
+    "container": {"assign": "assign_container_to_business_units", "unassign": "unassign_container_from_business_units"},
+    "repository": {"assign": "assign_repository_to_business_units", "unassign": "unassign_repository_from_business_units"},
+    "mobileApp": {"assign": "assign_mobile_app_to_business_units", "unassign": "unassign_mobile_app_from_business_units"},
+    "saasPlatform": {"assign": "assign_saas_platform_to_business_units", "unassign": "unassign_saas_platform_from_business_units"},
+    "cloudAsset": {"assign": "assign_cloud_asset_to_business_units", "unassign": "unassign_cloud_asset_from_business_units"},
+    "apiDocumentation": {"assign": "assign_api_documentation_to_business_units", "unassign": "unassign_api_documentation_from_business_units"},
+    "packageManager": {"assign": "assign_package_manager_to_business_units", "unassign": "unassign_package_manager_from_business_units"},
+}
+
+CUSTOM_PROPERTY_METHODS = {
+    "domain": {"list": "get_custom_properties_domain", "create": "create_custom_property_domain", "update": "update_custom_property_domain", "delete": "delete_custom_property_domain"},
+    "subdomain": {"list": "get_custom_properties_subdomain", "create": "create_custom_property_subdomain", "update": "update_custom_property_subdomain", "delete": "delete_custom_property_subdomain"},
+    "ip": {"list": "get_custom_properties_ip", "create": "create_custom_property_ip", "update": "update_custom_property_ip", "delete": "delete_custom_property_ip"},
+    "ipRange": {"list": "get_custom_properties_ip_range", "create": "create_custom_property_ip_range", "update": "update_custom_property_ip_range", "delete": "delete_custom_property_ip_range"},
+    "cloudStorage": {"list": "get_custom_properties_cloud_storage", "create": "create_custom_property_cloud_storage", "update": "update_custom_property_cloud_storage", "delete": "delete_custom_property_cloud_storage"},
+    "container": {"list": "get_custom_properties_container", "create": "create_custom_property_container", "update": "update_custom_property_container", "delete": "delete_custom_property_container"},
+    "repository": {"list": "get_custom_properties_repository", "create": "create_custom_property_repository", "update": "update_custom_property_repository", "delete": "delete_custom_property_repository"},
+    "mobileApp": {"list": "get_custom_properties_mobile_app", "create": "create_custom_property_mobile_app", "update": "update_custom_property_mobile_app", "delete": "delete_custom_property_mobile_app"},
+    "saasPlatform": {"list": "get_custom_properties_saas_platform", "create": "create_custom_property_saas_platform", "update": "update_custom_property_saas_platform", "delete": "delete_custom_property_saas_platform"},
+    "cloudAsset": {"list": "get_custom_properties_cloud_asset", "create": "create_custom_property_cloud_asset", "update": "update_custom_property_cloud_asset", "delete": "delete_custom_property_cloud_asset"},
+    "apiDocumentation": {"list": "get_custom_properties_api_documentation", "create": "create_custom_property_api_documentation", "update": "update_custom_property_api_documentation", "delete": "delete_custom_property_api_documentation"},
+    "packageManager": {"list": "get_custom_properties_package_manager", "create": "create_custom_property_package_manager", "update": "update_custom_property_package_manager", "delete": "delete_custom_property_by_id"},
+}
+
+NOTES_METHODS = {
+    "domain": {"list": "get_asset_domain_notes", "create": "create_asset_domain_note", "update": "update_asset_domain_note", "delete": "delete_asset_domain_note"},
+    "subdomain": {"list": "get_notes_subdomain", "create": "create_note_subdomain", "update": "update_note_subdomain", "delete": "delete_note_subdomain"},
+    "ip": {"list": "get_asset_ip_notes", "create": "create_asset_ip_note", "update": "update_asset_ip_note", "delete": "delete_asset_ip_note"},
+    "ipRange": {"list": "get_asset_ip_range_notes", "create": "create_note_ip_range", "update": "update_note_ip_range", "delete": "delete_note_ip_range"},
+    "cloudStorage": {"list": "get_asset_cloud_storage_notes", "create": "add_asset_cloud_storage_note", "update": "update_asset_cloud_storage_note", "delete": "delete_asset_cloud_storage_note"},
+    "container": {"list": "get_asset_container_notes", "create": "create_note_container", "update": "update_note_container", "delete": "delete_note_container"},
+    "repository": {"list": "get_asset_repository_notes", "create": "create_note_repository", "update": "update_note_repository", "delete": "delete_note_repository"},
+    "mobileApp": {"list": "get_asset_mobile_app_notes", "create": "create_note_mobile_app", "update": "update_note_mobile_app", "delete": "delete_note_mobile_app"},
+    "saasPlatform": {"list": "get_asset_saas_platform_notes", "create": "create_note_saas_platform", "update": "update_note_saas_platform", "delete": "delete_note_saas_platform"},
+    "cloudAsset": {"list": "get_asset_cloud_asset_notes", "create": "add_asset_cloud_asset_note", "update": "update_asset_cloud_asset_note", "delete": "delete_asset_cloud_asset_note"},
+    "apiDocumentation": {"list": "get_asset_api_documentation_notes", "create": "add_asset_api_documentation_note", "update": "update_asset_api_documentation_note", "delete": "delete_asset_api_documentation_note"},
+    "packageManager": {"list": "get_asset_package_manager_notes", "create": "add_asset_package_manager_note", "update": "update_asset_package_manager_note", "delete": "delete_asset_package_manager_note"},
+}
+
+
+def _unsupported_asset_error(capability, asset_type, supported):
+    return (
+        f"Error: {capability} not supported for asset type '{asset_type}'. "
+        f"Supported types: {', '.join(supported)}"
+    )
+
+
+def _validate_asset_type(asset_type):
+    if asset_type not in ALL_ASSET_TYPES:
+        return f"Error: Invalid asset_type '{asset_type}'. Valid types: {', '.join(ALL_ASSET_TYPES)}"
+    return None
+
+
+def _unwrap_data(response):
+    return response.data if hasattr(response, "data") else response
+
+
+def _format_bool(value):
+    return "enabled" if value else "disabled"
+
+
+def _format_engine_settings(asset_type, asset_id, settings):
+    fields = [
+        ("Adversary Sight", "adversary_sight_enabled"),
+        ("DNS Bruteforcing", "dns_bruteforcing_enabled"),
+        ("Automated Red Teaming", "automated_red_teaming_enabled"),
+        ("Intrusive HTTP Checks", "intrusive_http_checks_enabled"),
+        ("Credential Stuffing", "credential_stuffing_enabled"),
+        ("Rapid Reaction", "rapid_reaction_enabled"),
+    ]
+    lines = [f"✓ Engine settings for {asset_type} #{asset_id}:"]
+    for label, attr in fields:
+        lines.append(f"  • {label}: {_format_bool(getattr(settings, attr, False))}")
+    return "\n".join(lines)
+
+
+def _format_custom_properties(asset_type, asset_id, response, page):
+    items = _unwrap_data(response) or []
+    if not items:
+        return f"No custom properties found for {asset_type} #{asset_id}."
+    lines = [f"Custom properties for {asset_type} #{asset_id} (page {page or 1}):"]
+    for item in items:
+        lines.append(
+            f"  • [ID: {getattr(item, 'id', 'N/A')}] "
+            f"{getattr(item, 'key', 'N/A')} = {getattr(item, 'value', '')} "
+            f"(preset: {str(getattr(item, 'is_preset', False)).lower()})"
+        )
+    return "\n".join(lines)
+
+
+def _format_notes(asset_type, asset_id, response, page):
+    items = _unwrap_data(response) or []
+    if not items:
+        return f"No notes found for {asset_type} #{asset_id}."
+    lines = [f"Notes for {asset_type} #{asset_id} (page {page or 1}):"]
+    for item in items:
+        title = getattr(item, "title", "") or "Untitled"
+        note = getattr(item, "note", "") or ""
+        author = getattr(getattr(item, "author", None), "name", None) or "Unknown"
+        created = getattr(item, "last_modified", "N/A")
+        lines.append(f"  • [ID: {getattr(item, 'id', 'N/A')}] \"{title}\" - {note[:80]} (by {author}, {created})")
+    return "\n".join(lines)
 
 def _build_asset_kwargs(page, page_size, asset_name=None, statuses=None,
                         business_unit_ids=None, created_from=None, created_to=None,
@@ -1402,6 +1563,229 @@ def register_asset_tools(mcp):
             return "\n".join(lines)
         except Exception as e:
             return f"Error retrieving package manager details: {e}"
+
+    # ── Generic Asset Management Tools ─────────────────────────────
+
+    @mcp.tool()
+    def manage_engine_settings(
+        asset_type: str,
+        asset_id: int,
+        action: str = "get",
+        adversary_sight_enabled: bool = None,
+        dns_bruteforcing_enabled: bool = None,
+        automated_red_teaming_enabled: bool = None,
+        intrusive_http_checks_enabled: bool = None,
+        credential_stuffing_enabled: bool = None,
+        rapid_reaction_enabled: bool = None,
+    ) -> str:
+        """Get or update scan engine settings for a domain, subdomain, or IP asset."""
+        if asset_type not in ENGINE_SETTINGS_TYPES:
+            return _unsupported_asset_error("Engine settings", asset_type, ENGINE_SETTINGS_TYPES)
+        if action not in ("get", "update"):
+            return "Error: action must be one of: get, update"
+
+        required_update_fields = {
+            "adversary_sight_enabled": adversary_sight_enabled,
+            "dns_bruteforcing_enabled": dns_bruteforcing_enabled,
+            "automated_red_teaming_enabled": automated_red_teaming_enabled,
+            "credential_stuffing_enabled": credential_stuffing_enabled,
+            "rapid_reaction_enabled": rapid_reaction_enabled,
+        }
+        if action == "update":
+            missing = [name for name, value in required_update_fields.items() if value is None]
+            if missing:
+                return f"Error: {', '.join(missing)} required when action is 'update'"
+
+        try:
+            api = ASSET_API_CLASSES[asset_type](get_api_client())
+            methods = ENGINE_SETTINGS_METHODS[asset_type]
+            if action == "get":
+                response = getattr(api, methods["get"])(id=asset_id)
+            else:
+                dto = UpdateClientEngineSettingsDto(
+                    adversary_sight_enabled=adversary_sight_enabled,
+                    dns_bruteforcing_enabled=dns_bruteforcing_enabled,
+                    automated_red_teaming_enabled=automated_red_teaming_enabled,
+                    intrusive_http_checks_enabled=intrusive_http_checks_enabled if intrusive_http_checks_enabled is not None else False,
+                    credential_stuffing_enabled=credential_stuffing_enabled,
+                    rapid_reaction_enabled=rapid_reaction_enabled,
+                )
+                response = getattr(api, methods["update"])(
+                    id=asset_id,
+                    update_client_engine_settings_dto=dto,
+                )
+            return _format_engine_settings(asset_type, asset_id, _unwrap_data(response))
+        except Exception as e:
+            return f"Error: {e}"
+
+    @mcp.tool()
+    def set_asset_criticality(asset_type: str, asset_id: int, criticality: str) -> str:
+        """Set the criticality level for any supported asset type."""
+        validation_error = _validate_asset_type(asset_type)
+        if validation_error:
+            return validation_error
+        if criticality not in CRITICALITY_VALUES:
+            return f"Error: criticality must be one of: {', '.join(CRITICALITY_VALUES)}"
+
+        try:
+            api = ASSET_API_CLASSES[asset_type](get_api_client())
+            dto = SetCriticalityDto(criticality=criticality)
+            getattr(api, CRITICALITY_METHODS[asset_type])(id=asset_id, set_criticality_dto=dto)
+            return f"✓ Criticality set to '{criticality}' for {asset_type} #{asset_id}"
+        except Exception as e:
+            return f"Error: {e}"
+
+    @mcp.tool()
+    def manage_asset_business_units(
+        asset_type: str,
+        asset_id: int,
+        action: str,
+        business_unit_ids: list[int],
+    ) -> str:
+        """Assign or unassign business units for any supported asset type."""
+        validation_error = _validate_asset_type(asset_type)
+        if validation_error:
+            return validation_error
+        if action not in ("assign", "unassign"):
+            return "Error: action must be one of: assign, unassign"
+        if not isinstance(business_unit_ids, list) or not business_unit_ids:
+            return "Error: business_unit_ids must be a non-empty list"
+
+        try:
+            api = ASSET_API_CLASSES[asset_type](get_api_client())
+            method_name = BUSINESS_UNIT_METHODS[asset_type][action]
+            method = getattr(api, method_name)
+            if action == "assign":
+                if asset_type in ("domain", "subdomain"):
+                    dto = HostnameBusinessUnitIDsDTO(
+                        business_unit_ids=business_unit_ids,
+                        cascade_subdomain=False,
+                        cascade_ip=False,
+                    )
+                    method(id=asset_id, hostname_business_unit_ids_dto=dto)
+                else:
+                    dto = AssetBusinessUnitIdsDTO(business_unit_ids=business_unit_ids)
+                    method(id=asset_id, asset_business_unit_ids_dto=dto)
+            else:
+                kwargs = {"id": asset_id, "business_unit_ids": [str(x) for x in business_unit_ids]}
+                if asset_type in ("domain", "subdomain"):
+                    kwargs["cascade_subdomain"] = "false"
+                    kwargs["cascade_ip"] = "false"
+                method(**kwargs)
+            verb = "Assigned" if action == "assign" else "Unassigned"
+            prep = "to" if action == "assign" else "from"
+            return f"✓ {verb} business units {business_unit_ids} {prep} {asset_type} #{asset_id}"
+        except Exception as e:
+            return f"Error: {e}"
+
+    @mcp.tool()
+    def manage_asset_custom_property(
+        asset_type: str,
+        asset_id: int,
+        action: str,
+        custom_property_id: int = None,
+        key: str = None,
+        value: str = None,
+        is_preset: bool = None,
+        page: int = None,
+        page_size: int = None,
+    ) -> str:
+        """List, create, update, or delete custom properties on an asset."""
+        validation_error = _validate_asset_type(asset_type)
+        if validation_error:
+            return validation_error
+        if action not in ("list", "create", "update", "delete"):
+            return "Error: action must be one of: list, create, update, delete"
+        if action == "create" and not key:
+            return "Error: key is required when action is 'create'"
+        if action == "create" and value is None:
+            return "Error: value is required when action is 'create'"
+        if action == "update":
+            if custom_property_id is None:
+                return "Error: custom_property_id is required when action is 'update'"
+            if not key:
+                return "Error: key is required when action is 'update'"
+        if action == "delete" and custom_property_id is None:
+            return "Error: custom_property_id is required when action is 'delete'"
+
+        try:
+            api = ASSET_API_CLASSES[asset_type](get_api_client())
+            method = getattr(api, CUSTOM_PROPERTY_METHODS[asset_type][action])
+            if action == "list":
+                response = method(id=asset_id, page=page, page_size=page_size)
+                return _format_custom_properties(asset_type, asset_id, response, page)
+            if action == "create":
+                dto = CreateClientCustomPropertyDto(key=key, value=value, is_preset=is_preset)
+                response = method(id=asset_id, create_client_custom_property_dto=dto)
+                prop = _unwrap_data(response)
+                return (
+                    f"✓ Custom property created: {getattr(prop, 'key', key)} = "
+                    f"{getattr(prop, 'value', value)} (ID: {getattr(prop, 'id', 'N/A')})"
+                )
+            if action == "update":
+                dto = UpdateClientCustomPropertyDto(key=key, value=value)
+                response = method(
+                    id=asset_id,
+                    custom_property_id=custom_property_id,
+                    update_client_custom_property_dto=dto,
+                )
+                prop = _unwrap_data(response)
+                return (
+                    f"✓ Custom property updated: {getattr(prop, 'key', key)} = "
+                    f"{getattr(prop, 'value', value)} (ID: {getattr(prop, 'id', custom_property_id)})"
+                )
+            method(id=asset_id, custom_property_id=custom_property_id)
+            return f"✓ Custom property #{custom_property_id} deleted from {asset_type} #{asset_id}"
+        except Exception as e:
+            return f"Error: {e}"
+
+    @mcp.tool()
+    def manage_asset_notes(
+        asset_type: str,
+        asset_id: int,
+        action: str,
+        note_id: int = None,
+        title: str = None,
+        note: str = None,
+        page: int = None,
+        page_size: int = None,
+    ) -> str:
+        """List, create, update, or delete notes on an asset."""
+        validation_error = _validate_asset_type(asset_type)
+        if validation_error:
+            return validation_error
+        if action not in ("list", "create", "update", "delete"):
+            return "Error: action must be one of: list, create, update, delete"
+        if action == "create" and not note:
+            return "Error: note is required when action is 'create'"
+        if action == "update":
+            if note_id is None:
+                return "Error: note_id is required when action is 'update'"
+            if not note:
+                return "Error: note is required when action is 'update'"
+        if action == "delete" and note_id is None:
+            return "Error: note_id is required when action is 'delete'"
+
+        try:
+            api = ASSET_API_CLASSES[asset_type](get_api_client())
+            method = getattr(api, NOTES_METHODS[asset_type][action])
+            if action == "list":
+                response = method(id=asset_id, page=page, page_size=page_size)
+                return _format_notes(asset_type, asset_id, response, page)
+            if action == "create":
+                dto = CreateClientNoteDto(title=title, note=note)
+                response = method(id=asset_id, create_client_note_dto=dto)
+                created = _unwrap_data(response)
+                return f"✓ Note created for {asset_type} #{asset_id} (ID: {getattr(created, 'id', 'N/A')})"
+            if action == "update":
+                dto = CreateClientNoteDto(title=title, note=note)
+                response = method(id=asset_id, note_id=note_id, create_client_note_dto=dto)
+                updated = _unwrap_data(response)
+                return f"✓ Note updated for {asset_type} #{asset_id} (ID: {getattr(updated, 'id', note_id)})"
+            method(id=asset_id, note_id=note_id)
+            return f"✓ Note #{note_id} deleted from {asset_type} #{asset_id}"
+        except Exception as e:
+            return f"Error: {e}"
 
     # ── Update Asset Status (unified) ─────────────────────────────
 

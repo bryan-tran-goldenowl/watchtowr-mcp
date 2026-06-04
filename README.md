@@ -4,7 +4,7 @@ A [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server that c
 
 ## Features
 
-- **104 tools** covering the full watchTowr Platform API — assets, findings, hunts, certificates, suspicious domains, and more
+- **109 tools** covering the full watchTowr Platform API — assets, findings, hunts, certificates, suspicious domains, and more
 - **Read and write** — query your attack surface and take action (update statuses, trigger retests, submit seed assets)
 - **Composite intelligence** — built-in tools for attack surface summaries, change detection, executive scorecards, and compliance reporting
 - **Secure** — authenticates via API key with tenant isolation; credentials never leave your environment
@@ -141,7 +141,7 @@ docker run -d --rm \
 | `get_unresolved_findings_by_business_unit` | List unresolved findings for a specific business unit |
 | `export_finding_pdf` | Export a finding report as PDF |
 
-### Assets (30 tools)
+### Assets (35 tools)
 
 | Tool | Description |
 |------|-------------|
@@ -169,6 +169,11 @@ docker run -d --rm \
 | `get_asset_mobile_app_details` | Full detail for a specific mobile application |
 | `update_asset_status` | Update the status of any asset type |
 | `add_seed_asset` | Submit a new seed asset for discovery |
+| `manage_engine_settings` | Get or update scan engine settings for domains, subdomains, and IPs |
+| `set_asset_criticality` | Set criticality for any supported asset type |
+| `manage_asset_business_units` | Assign or unassign business units for any supported asset type |
+| `manage_asset_custom_property` | List, create, update, or delete custom properties on an asset |
+| `manage_asset_notes` | List, create, update, or delete notes on an asset |
 | `list_api_documentations` | List discovered API documentation assets |
 | `get_api_documentation_details` | Full detail for a specific API documentation asset |
 | `list_cloud_assets` | List discovered cloud assets (AWS, GCP, Azure, etc.) |

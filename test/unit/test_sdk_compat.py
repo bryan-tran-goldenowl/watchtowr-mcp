@@ -66,8 +66,8 @@ def test_patches_are_idempotent():
     apply_watchtowr_sdk_compat_patches()
 
 
-def test_client_ip_from_dict_handles_string_id():
-    """Verify that the ClientIp.from_dict handles string IDs cleanly as per the reconciled schema."""
+def test_client_ip_schema_accepts_string_id():
+    """Generated ClientIp schema should accept string IDs returned by the Platform."""
     from watchtowr_api_sdk.models.client_ip import ClientIp
     # Minimal payload matching the ClientIp model requirements
     ip_payload = {
@@ -95,6 +95,5 @@ def test_client_ip_from_dict_handles_string_id():
     client_ip = ClientIp.from_dict(ip_payload)
     assert client_ip is not None
     assert client_ip.id == "79985"
-
 
 

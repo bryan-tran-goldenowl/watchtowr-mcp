@@ -24,6 +24,14 @@ def test_get_finding_details(live_env, call, sample_finding_id):
 
 def test_search_findings(live_env, call):
     assert_ok(call("search_findings", page_size=5), allow_empty=True)
+    assert_ok(call("search_findings", finding_title="Credentials", page_size=5), allow_empty=True)
+    assert_ok(call("search_findings", severities="Critical,High", page_size=5), allow_empty=True)
+    assert_ok(call("search_findings", statuses="confirmed,unconfirmed", page_size=5), allow_empty=True)
+    assert_ok(call("search_findings", asset_title="watchtowr.com", page_size=5), allow_empty=True)
+    assert_ok(call("search_findings", asset_types="domain,subdomain", page_size=5), allow_empty=True)
+    assert_ok(call("search_findings", assignee="No Assignee", page_size=5), allow_empty=True)
+    assert_ok(call("search_findings", tags="CISA-KEV", page_size=5), allow_empty=True)
+    assert_ok(call("search_findings", finding_impact_threshold="High", page_size=5), allow_empty=True)
 
 
 def test_get_finding_statuses(live_env, call):
@@ -68,7 +76,15 @@ def test_retest_finding(live_env, call, sample_finding_id):
 
 
 def test_search_findings_with_new_filters(live_env, call):
-    assert_ok(call("search_findings", only_validated_exploitable=False, exploitation_risk_level="High,Moderate", page_size=5), allow_empty=True)
+    assert_ok(
+        call(
+            "search_findings",
+            only_validated_exploitable=False,
+            exploitation_risk_level="High,Moderate",
+            page_size=5,
+        ),
+        allow_empty=True,
+    )
 
 
 @pytest.mark.write
