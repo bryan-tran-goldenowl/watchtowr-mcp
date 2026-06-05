@@ -195,3 +195,6 @@ cython_debug/
 
 
 scripts/*
+
+# Git worktrees
+.worktrees/
