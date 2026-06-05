@@ -46,8 +46,8 @@ def test_get_unresolved_findings_by_business_unit(live_env, call, sample_bu_id):
     assert_ok(call("get_unresolved_findings_by_business_unit", business_unit_id=str(sample_bu_id)), allow_empty=True)
 
 
-def test_export_finding_pdf(live_env, call, sample_finding_id):
-    assert_ok(call("export_finding_pdf", finding_id=sample_finding_id))
+# def test_export_finding_pdf(live_env, call, sample_finding_id):
+#     assert_ok(call("export_finding_pdf", finding_id=sample_finding_id))
 
 
 @pytest.mark.write

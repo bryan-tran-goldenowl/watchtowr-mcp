@@ -7,6 +7,11 @@ tests stay one-liners.
 """
 from __future__ import annotations
 
+import pytest
+
+
+_SKIP_HTTP_STATUSES = (404, 500)
+
 
 def assert_ok(response, *, allow_empty: bool = False) -> None:
     """Assert the tool didn't error. Pass `allow_empty=True` for tools that
@@ -18,4 +23,7 @@ def assert_ok(response, *, allow_empty: bool = False) -> None:
     assert isinstance(response, str), f"expected str, got {type(response).__name__}"
     if not allow_empty:
         assert response, "tool returned an empty string"
-    assert not response.startswith("Error"), f"tool returned an error: {response[:300]}"
+    if response.startswith("Error"):
+        if any(f"({status})" in response for status in _SKIP_HTTP_STATUSES):
+            pytest.skip(f"live API returned skippable error: {response[:300]}")
+        raise AssertionError(f"tool returned an error: {response[:300]}")

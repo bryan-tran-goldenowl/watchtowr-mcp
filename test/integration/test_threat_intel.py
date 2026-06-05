@@ -41,3 +41,11 @@ def test_get_certificate_details(live_env, call, sample_cert_id):
 
 def test_get_expiring_certificates(live_env, call):
     assert_ok(call("get_expiring_certificates", days=30, page_size=5), allow_empty=True)
+
+
+def test_search_pending_domains(live_env, call):
+    assert_ok(call("search_pending_domains", page_size=5), allow_empty=True)
+
+
+def test_search_pending_domains_with_filter(live_env, call):
+    assert_ok(call("search_pending_domains", source="dns", page_size=5), allow_empty=True)

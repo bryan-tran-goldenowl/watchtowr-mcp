@@ -25,7 +25,6 @@ from watchtowr_api_sdk.models.hostname_business_unit_ids_dto import HostnameBusi
 from watchtowr_api_sdk.models.create_client_custom_property_dto import CreateClientCustomPropertyDto
 from watchtowr_api_sdk.models.update_client_custom_property_dto import UpdateClientCustomPropertyDto
 from watchtowr_api_sdk.models.create_client_note_dto import CreateClientNoteDto
-import inspect
 from watchtowr_api_sdk.models.ip_range_values import IpRangeValues
 from watchtowr_api_sdk.models.filter_by_business_unit_input import FilterByBusinessUnitInput
 
@@ -35,7 +34,7 @@ VALID_SEED_ASSET_TYPES = [
     "apiDocumentation", "packageManager",
 ]
 
-from ..client import get_api_client, get_total, parse_date, format_bus
+from ...client import get_api_client, get_total, parse_date, format_bus, supported_kwargs
 
 
 ALL_ASSET_TYPES = [
@@ -216,12 +215,7 @@ def _build_asset_kwargs(page, page_size, asset_name=None, statuses=None,
     return kwargs
 
 
-def _filter_kwargs(func, kwargs):
-    sig = inspect.signature(func)
-    return {k: v for k, v in kwargs.items() if k in sig.parameters}
-
-
-def register_asset_tools(mcp):
+def register_asset_core_tools(mcp):
 
     # ── IP Addresses ──────────────────────────────────────────────
 
@@ -263,7 +257,7 @@ def register_asset_tools(mcp):
             )
             if match_type:
                 kwargs["match_type"] = match_type
-            response = api.get_list_asset_ips(**_filter_kwargs(api.get_list_asset_ips, kwargs))
+            response = api.get_list_asset_ips(**supported_kwargs(api.get_list_asset_ips, kwargs))
 
             if not hasattr(response, 'data') or not response.data:
                 return "No IP addresses found."
@@ -351,7 +345,7 @@ def register_asset_tools(mcp):
                 kwargs["created_from"] = parse_date(created_from)
             if created_to:
                 kwargs["created_to"] = parse_date(created_to)
-            response = api.get_asset_ip_ports(id=ip_id, **_filter_kwargs(api.get_asset_ip_ports, kwargs))
+            response = api.get_asset_ip_ports(id=ip_id, **supported_kwargs(api.get_asset_ip_ports, kwargs))
 
             if not hasattr(response, 'data') or not response.data:
                 return f"No ports found for IP {ip_id}."
@@ -446,7 +440,7 @@ def register_asset_tools(mcp):
                 created_from, created_to, source,
                 custom_property_key, custom_property_value
             )
-            response = api.get_list_asset_domains(**_filter_kwargs(api.get_list_asset_domains, kwargs))
+            response = api.get_list_asset_domains(**supported_kwargs(api.get_list_asset_domains, kwargs))
 
             if not hasattr(response, 'data') or not response.data:
                 return "No domains found."
@@ -535,7 +529,7 @@ def register_asset_tools(mcp):
                 created_from, created_to, source,
                 custom_property_key, custom_property_value
             )
-            response = api.get_list_asset_subdomains(**_filter_kwargs(api.get_list_asset_subdomains, kwargs))
+            response = api.get_list_asset_subdomains(**supported_kwargs(api.get_list_asset_subdomains, kwargs))
 
             if not hasattr(response, 'data') or not response.data:
                 return "No subdomains found."
@@ -632,7 +626,7 @@ def register_asset_tools(mcp):
                 kwargs["include_closed_port"] = include_closed_port
             if include_no_service is not None:
                 kwargs["include_no_service"] = include_no_service
-            response = api.get_list_asset_ports(**_filter_kwargs(api.get_list_asset_ports, kwargs))
+            response = api.get_list_asset_ports(**supported_kwargs(api.get_list_asset_ports, kwargs))
 
             if not hasattr(response, 'data') or not response.data:
                 return "No ports found."
@@ -724,7 +718,7 @@ def register_asset_tools(mcp):
                 created_from, created_to, source,
                 custom_property_key, custom_property_value
             )
-            response = api.get_list_asset_ipranges(**_filter_kwargs(api.get_list_asset_ipranges, kwargs))
+            response = api.get_list_asset_ipranges(**supported_kwargs(api.get_list_asset_ipranges, kwargs))
 
             if not hasattr(response, 'data') or not response.data:
                 return "No IP ranges found."
@@ -824,7 +818,7 @@ def register_asset_tools(mcp):
                 created_from, created_to, source,
                 custom_property_key, custom_property_value
             )
-            response = api.get_list_asset_cloud_storages(**_filter_kwargs(api.get_list_asset_cloud_storages, kwargs))
+            response = api.get_list_asset_cloud_storages(**supported_kwargs(api.get_list_asset_cloud_storages, kwargs))
 
             if not hasattr(response, 'data') or not response.data:
                 return "No cloud storage assets found."
@@ -919,7 +913,7 @@ def register_asset_tools(mcp):
                 created_from, created_to, source,
                 custom_property_key, custom_property_value
             )
-            response = api.get_list_asset_repositories(**_filter_kwargs(api.get_list_asset_repositories, kwargs))
+            response = api.get_list_asset_repositories(**supported_kwargs(api.get_list_asset_repositories, kwargs))
 
             if not hasattr(response, 'data') or not response.data:
                 return "No source code repositories found."
@@ -1014,7 +1008,7 @@ def register_asset_tools(mcp):
                 created_from, created_to, source,
                 custom_property_key, custom_property_value
             )
-            response = api.get_list_asset_container(**_filter_kwargs(api.get_list_asset_container, kwargs))
+            response = api.get_list_asset_container(**supported_kwargs(api.get_list_asset_container, kwargs))
 
             if not hasattr(response, 'data') or not response.data:
                 return "No container assets found."
@@ -1110,7 +1104,7 @@ def register_asset_tools(mcp):
                 created_from, created_to, source,
                 custom_property_key, custom_property_value
             )
-            response = api.get_list_asset_saas_platforms(**_filter_kwargs(api.get_list_asset_saas_platforms, kwargs))
+            response = api.get_list_asset_saas_platforms(**supported_kwargs(api.get_list_asset_saas_platforms, kwargs))
 
             if not hasattr(response, 'data') or not response.data:
                 return "No SaaS platforms found."
@@ -1202,7 +1196,7 @@ def register_asset_tools(mcp):
                 created_from, created_to, source,
                 custom_property_key, custom_property_value
             )
-            response = api.get_list_asset_mobile_apps(**_filter_kwargs(api.get_list_asset_mobile_apps, kwargs))
+            response = api.get_list_asset_mobile_apps(**supported_kwargs(api.get_list_asset_mobile_apps, kwargs))
 
             if not hasattr(response, 'data') or not response.data:
                 return "No mobile applications found."
@@ -1308,7 +1302,7 @@ def register_asset_tools(mcp):
                 kwargs["super_type"] = super_type
             if sub_type:
                 kwargs["sub_type"] = sub_type
-            response = api.get_list_asset_cloud_asset(**_filter_kwargs(api.get_list_asset_cloud_asset, kwargs))
+            response = api.get_list_asset_cloud_asset(**supported_kwargs(api.get_list_asset_cloud_asset, kwargs))
 
             if not hasattr(response, 'data') or not response.data:
                 return "No cloud assets found."
@@ -1415,7 +1409,7 @@ def register_asset_tools(mcp):
                 created_from, created_to, source,
                 custom_property_key, custom_property_value
             )
-            response = api.get_list_asset_api_documentation(**_filter_kwargs(api.get_list_asset_api_documentation, kwargs))
+            response = api.get_list_asset_api_documentation(**supported_kwargs(api.get_list_asset_api_documentation, kwargs))
 
             if not hasattr(response, 'data') or not response.data:
                 return "No API documentations found."
@@ -1508,7 +1502,7 @@ def register_asset_tools(mcp):
                 created_from, created_to, source,
                 custom_property_key, custom_property_value
             )
-            response = api.get_list_asset_package_managers(**_filter_kwargs(api.get_list_asset_package_managers, kwargs))
+            response = api.get_list_asset_package_managers(**supported_kwargs(api.get_list_asset_package_managers, kwargs))
 
             if not hasattr(response, 'data') or not response.data:
                 return "No package managers found."
@@ -1643,7 +1637,9 @@ def register_asset_tools(mcp):
             return "Error: business_unit_ids must be a non-empty list"
 
         try:
-            api = ASSET_API_CLASSES[asset_type](get_api_client())
+            import watchtowr_mcp_server.tools.assets as assets_module
+
+            api = ASSET_API_CLASSES[asset_type](assets_module.get_api_client())
             method_name = BUSINESS_UNIT_METHODS[asset_type][action]
             method = getattr(api, method_name)
             if action == "assign":
@@ -1758,7 +1754,9 @@ def register_asset_tools(mcp):
             return "Error: note_id is required when action is 'delete'"
 
         try:
-            api = ASSET_API_CLASSES[asset_type](get_api_client())
+            import watchtowr_mcp_server.tools.assets as assets_module
+
+            api = ASSET_API_CLASSES[asset_type](assets_module.get_api_client())
             method = getattr(api, NOTES_METHODS[asset_type][action])
             if action == "list":
                 response = method(id=asset_id, page=page, page_size=page_size)

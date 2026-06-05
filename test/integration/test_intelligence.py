@@ -29,3 +29,27 @@ def test_list_credential_attempt_logs(live_env, call):
 
 def test_list_finding_retest_history(live_env, call):
     assert_ok(call("list_finding_retest_history", page_size=5), allow_empty=True)
+
+
+@pytest.mark.live
+def test_search_active_defense_library(live_env, call):
+    response = call("search_active_defense_library", page_size=5)
+    assert_ok(response)
+
+
+@pytest.mark.live
+def test_search_active_defense_library_with_query(live_env, call):
+    response = call("search_active_defense_library", search="sql", page_size=5)
+    assert_ok(response)
+
+
+@pytest.mark.live
+def test_search_capabilities(live_env, call):
+    response = call("search_capabilities", query="log4j")
+    assert_ok(response)
+
+
+@pytest.mark.live
+def test_search_capabilities_cve(live_env, call):
+    response = call("search_capabilities", query="CVE-2021")
+    assert_ok(response)

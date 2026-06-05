@@ -126,6 +126,16 @@ SDK_CALLS = [
     ("watchtowr_api_sdk.api.credential_attempt_logs_api", "CredentialAttemptLogsApi", "get_list_credential_attempt_logs"),
     # Finding Retest History
     ("watchtowr_api_sdk.api.finding_retest_history_api", "FindingRetestHistoryApi", "get_list_finding_retest_history"),
+    # DNS records
+    ("watchtowr_api_sdk.api.dns_record_analysis_api", "DNSRecordAnalysisApi", "get_list_dns_records"),
+    # Pending domains
+    ("watchtowr_api_sdk.api.pending_domains_api", "PendingDomainsApi", "get_list_pending_domains"),
+    # Security posture dashboard
+    ("watchtowr_api_sdk.api.security_posture_dashboard_api", "SecurityPostureDashboardApi", "get_security_posture_dashboard"),
+    # Active defense library
+    ("watchtowr_api_sdk.api.active_defense_library_api", "ActiveDefenseLibraryApi", "get_list_active_defense_library_rules"),
+    # Capability search
+    ("watchtowr_api_sdk.api.capability_search_api", "CapabilitySearchApi", "capability_search"),
 ]
 
 
@@ -167,8 +177,8 @@ def test_sdk_infra_resolves(module, cls):
 
 def test_sdk_call_count_matches_expectation():
     """If this fails, the SDK_CALLS list and the MCP source have drifted."""
-    assert len(SDK_CALLS) == 71, (
-        "Expected 71 distinct SDK (class, method) call sites. Update both this "
+    assert len(SDK_CALLS) == 76, (
+        "Expected 76 distinct SDK (class, method) call sites. Update both this "
         "constant and SDK_CALLS when you add/remove an SDK call in the MCP tools."
     )
 

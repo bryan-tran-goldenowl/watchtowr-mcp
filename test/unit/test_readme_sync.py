@@ -16,21 +16,21 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 README_PATH = REPO_ROOT / "README.md"
 TOOLS_DIR = REPO_ROOT / "watchtowr_mcp_server" / "tools"
 
-# Maps the README's `### <heading>` to the matching file under tools/.
+# Maps the README's `### <heading>` to the matching file(s) under tools/.
 # The README also tells us the expected count per category — keep these
 # pairs in lockstep with the README headings.
 CATEGORY_MAP = {
-    "Findings": ("findings.py", 11),
-    "Assets": ("assets.py", 35),
-    "Hunts": ("hunts.py", 6),
-    "Threat Intelligence": ("threat_intel.py", 6),
-    "Services": ("services.py", 2),
-    "Organisation": ("organization.py", 5),
-    "Composite & Triage": ("composite.py", 13),
-    "Reporting & Compliance": ("reporting.py", 11),
-    "Incident Response": ("incident.py", 5),
-    "Workflow & Automation": ("workflow.py", 6),
-    "Intelligence": ("intelligence.py", 9),
+    "Findings": (("findings.py",), 11),
+    "Assets": (("assets/core.py", "assets/changelog.py", "assets/dns.py"), 38),
+    "Hunts": (("hunts.py",), 6),
+    "Threat Intelligence": (("threat_intel.py",), 7),
+    "Services": (("services.py",), 2),
+    "Organisation": (("organization.py",), 5),
+    "Composite & Triage": (("composite.py",), 13),
+    "Reporting & Compliance": (("reporting.py",), 12),
+    "Incident Response": (("incident.py",), 5),
+    "Workflow & Automation": (("workflow.py",), 6),
+    "Intelligence": (("intelligence.py",), 11),
 }
 
 
@@ -61,10 +61,17 @@ def _tool_names_in_file(path: Path) -> set[str]:
     return names
 
 
+def _tool_names_in_files(filenames: tuple[str, ...]) -> set[str]:
+    out: set[str] = set()
+    for filename in filenames:
+        out |= _tool_names_in_file(TOOLS_DIR / filename)
+    return out
+
+
 def _all_code_tool_names() -> set[str]:
     out: set[str] = set()
-    for filename, _ in CATEGORY_MAP.values():
-        out |= _tool_names_in_file(TOOLS_DIR / filename)
+    for filenames, _ in CATEGORY_MAP.values():
+        out |= _tool_names_in_files(filenames)
     return out
 
 
@@ -83,18 +90,18 @@ def test_readme_and_code_tool_sets_match():
     )
 
 
-@pytest.mark.parametrize("category,filename,expected", [
-    (cat, fn, n) for cat, (fn, n) in CATEGORY_MAP.items()
+@pytest.mark.parametrize("category,filenames,expected", [
+    (cat, fns, n) for cat, (fns, n) in CATEGORY_MAP.items()
 ])
-def test_category_tool_count_matches_readme_heading(category, filename, expected):
-    actual = len(_tool_names_in_file(TOOLS_DIR / filename))
+def test_category_tool_count_matches_readme_heading(category, filenames, expected):
+    actual = len(_tool_names_in_files(filenames))
     assert actual == expected, (
-        f"README claims '{category} ({expected} tools)' but {filename} "
+        f"README claims '{category} ({expected} tools)' but {', '.join(filenames)} "
         f"defines {actual} @mcp.tool() functions."
     )
 
 
-def test_total_tool_count_is_109():
-    """README.md line 7 claims '109 tools'."""
-    total = sum(len(_tool_names_in_file(TOOLS_DIR / fn)) for fn, _ in CATEGORY_MAP.values())
-    assert total == 109, f"Expected 109 tools across all categories, found {total}"
+def test_total_tool_count_is_116():
+    """README.md line 7 claims '116 tools'."""
+    total = sum(len(_tool_names_in_files(fns)) for fns, _ in CATEGORY_MAP.values())
+    assert total == 116, f"Expected 116 tools across all categories, found {total}"

@@ -51,3 +51,9 @@ def test_get_week_over_week_delta(live_env, call):
 
 def test_get_top_findings_by_occurrence(live_env, call):
     assert_ok(call("get_top_findings_by_occurrence", page_size=5), allow_empty=True)
+
+
+@pytest.mark.live
+def test_get_security_posture(live_env, call):
+    response = call("get_security_posture")
+    assert_ok(response)

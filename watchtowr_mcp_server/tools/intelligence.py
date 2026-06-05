@@ -6,13 +6,10 @@ from watchtowr_api_sdk.api.adversary_intelligence_api import AdversaryIntelligen
 from watchtowr_api_sdk.api.compromised_endpoints_api import CompromisedEndpointsApi
 from watchtowr_api_sdk.api.credential_attempt_logs_api import CredentialAttemptLogsApi
 from watchtowr_api_sdk.api.finding_retest_history_api import FindingRetestHistoryApi
+from watchtowr_api_sdk.api.active_defense_library_api import ActiveDefenseLibraryApi
+from watchtowr_api_sdk.api.capability_search_api import CapabilitySearchApi
 
-from ..client import get_api_client, get_total, parse_date, severity_display
-import inspect
-
-def _filter_kwargs(func, kwargs):
-    sig = inspect.signature(func)
-    return {k: v for k, v in kwargs.items() if k in sig.parameters}
+from ..client import get_api_client, get_total, parse_date, severity_display, supported_kwargs
 
 
 def register_intelligence_tools(mcp):
@@ -325,7 +322,7 @@ def register_intelligence_tools(mcp):
             if created_from: kwargs["created_from"] = parse_date(created_from)
             if created_to: kwargs["created_to"] = parse_date(created_to)
                 
-            response = api.get_list_compromised_endpoints(**_filter_kwargs(api.get_list_compromised_endpoints, kwargs))
+            response = api.get_list_compromised_endpoints(**supported_kwargs(api.get_list_compromised_endpoints, kwargs))
             if not hasattr(response, 'data') or not response.data:
                 return "No compromised endpoints found."
             
@@ -387,7 +384,7 @@ def register_intelligence_tools(mcp):
             if query: kwargs["query"] = query
             if usernames: kwargs["usernames"] = [x.strip() for x in usernames.split(",")]
                 
-            response = api.get_list_compromised_endpoint_harvested_credentials(**_filter_kwargs(api.get_list_compromised_endpoint_harvested_credentials, kwargs))
+            response = api.get_list_compromised_endpoint_harvested_credentials(**supported_kwargs(api.get_list_compromised_endpoint_harvested_credentials, kwargs))
             if not hasattr(response, 'data') or not response.data:
                 return f"No harvested credentials found for endpoint {endpoint_id}."
             
@@ -446,7 +443,7 @@ def register_intelligence_tools(mcp):
             if created_from: kwargs["created_from"] = parse_date(created_from)
             if created_to: kwargs["created_to"] = parse_date(created_to)
                 
-            response = api.get_list_credential_attempt_logs(**_filter_kwargs(api.get_list_credential_attempt_logs, kwargs))
+            response = api.get_list_credential_attempt_logs(**supported_kwargs(api.get_list_credential_attempt_logs, kwargs))
             if not hasattr(response, 'data') or not response.data:
                 return "No credential attempt logs found."
             
@@ -533,7 +530,7 @@ def register_intelligence_tools(mcp):
             if retest_start_date_from: kwargs["retest_start_date_from"] = parse_date(retest_start_date_from)
             if retest_start_date_to: kwargs["retest_start_date_to"] = parse_date(retest_start_date_to)
                 
-            response = api.get_list_finding_retest_history(**_filter_kwargs(api.get_list_finding_retest_history, kwargs))
+            response = api.get_list_finding_retest_history(**supported_kwargs(api.get_list_finding_retest_history, kwargs))
             if not hasattr(response, 'data') or not response.data:
                 return "No finding retest history entries found."
             
@@ -600,7 +597,7 @@ def register_intelligence_tools(mcp):
             api = FindingRetestHistoryApi(get_api_client())
             kwargs = {"finding_id": str(finding_id), "page": 1, "page_size": 30}
             
-            response = api.get_list_finding_retest_history(**_filter_kwargs(api.get_list_finding_retest_history, kwargs))
+            response = api.get_list_finding_retest_history(**supported_kwargs(api.get_list_finding_retest_history, kwargs))
             if not hasattr(response, 'data') or not response.data:
                 return f"No retest history found for finding {finding_id}."
             
@@ -648,7 +645,177 @@ def register_intelligence_tools(mcp):
                 lines.append(f"Triggered By: {trigger}")
                 lines.append(f"Started At: {start}")
                 lines.append(f"Completed At: {complete}")
-                
+
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Error: {str(e)}"
+
+
+    @mcp.tool()
+    def search_active_defense_library(
+        search: str = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> str:
+        """Browse or search the active defense rule library.
+
+        Lists detection rules and defense templates available in the platform.
+
+        Args:
+            search: Search by rule name or description.
+            page: Page number.
+            page_size: Results per page (max 30).
+        """
+        try:
+            api = ActiveDefenseLibraryApi(get_api_client())
+            kwargs = {"page": page, "page_size": min(page_size, 30)}
+            if search:
+                kwargs["search"] = search
+
+            response = api.get_list_active_defense_library_rules(
+                **supported_kwargs(api.get_list_active_defense_library_rules, kwargs)
+            )
+
+            if not hasattr(response, "data") or not response.data:
+                return "No active defense rules found."
+
+            total = get_total(response) or 0
+            lines = [f"Active Defense Library ({len(response.data)} of {total}):"]
+            lines.append("")
+
+            for i, rule in enumerate(response.data, 1):
+                rid = getattr(rule, "id", "")
+                rule_name = getattr(rule, "rule_name", "")
+                cve_id = getattr(rule, "cve_id", None)
+                wt_id = getattr(rule, "wt_id", None)
+                rule_type = getattr(rule, "type", "")
+                kev_status = getattr(rule, "kev_status", None)
+                zero_day = getattr(rule, "zero_day", False)
+                providers = getattr(rule, "providers", []) or []
+                created_at = getattr(rule, "created_at", "")
+                updated_at = getattr(rule, "updated_at", "")
+
+                lines.append(f"{i}. ID: {rid} | {rule_name}")
+
+                meta_parts = []
+                if rule_type:
+                    meta_parts.append(f"Type: {rule_type}")
+                if cve_id:
+                    meta_parts.append(f"CVE: {cve_id}")
+                if wt_id:
+                    meta_parts.append(f"WT ID: {wt_id}")
+                if zero_day:
+                    meta_parts.append("Zero-day: Yes")
+                if meta_parts:
+                    lines.append(f"   {' | '.join(meta_parts)}")
+
+                if kev_status:
+                    kev_parts = []
+                    for source in ("cisa", "vulncheck", "watchtowr"):
+                        if getattr(kev_status, source, False):
+                            kev_parts.append(source)
+                    lines.append(f"   KEV: {', '.join(kev_parts) if kev_parts else 'None'}")
+
+                if providers:
+                    lines.append(f"   Providers: {', '.join(providers)}")
+
+                if created_at or updated_at:
+                    lines.append(f"   Created: {created_at or 'N/A'} | Updated: {updated_at or 'N/A'}")
+                lines.append("")
+
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Error: {str(e)}"
+
+
+    @mcp.tool()
+    def search_capabilities(
+        query: str,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> str:
+        """Search watchTowr security coverage by hunt title, CVE ID, or TTP tactic.
+
+        Returns matching hunts with associated CVE IDs and TTP Library tactics,
+        showing what the platform actively detects.
+
+        Args:
+            query: Search term — hunt title, CVE ID (e.g. CVE-2021-44228), or tactic name.
+            page: Page number.
+            page_size: Results per page (max 30).
+        """
+        try:
+            api = CapabilitySearchApi(get_api_client())
+            kwargs = {"query": query, "page": page, "page_size": min(page_size, 30)}
+
+            response = api.capability_search(
+                **supported_kwargs(api.capability_search, kwargs)
+            )
+
+            data = response.data
+            hunts = getattr(data, "hunts", None) or []
+            ttp_library = getattr(data, "ttp_library", None) or []
+
+            if not hunts and not ttp_library:
+                return f'No capabilities found for "{query}".'
+
+            total = get_total(response) or len(hunts)
+            lines = [
+                f'Capability Search: "{query}" ({len(hunts)} hunts of {total}, {len(ttp_library)} TTP tactics):'
+            ]
+            lines.append("")
+
+            if hunts:
+                lines.append("Matching Hunts:")
+                for i, hunt in enumerate(hunts, 1):
+                    title = getattr(hunt, "title", "") or "Untitled hunt"
+                    cves = getattr(hunt, "cve_ids", []) or []
+                    status = getattr(hunt, "status", None)
+                    hunt_type = getattr(hunt, "type", None)
+                    total_findings = getattr(hunt, "total_findings", None)
+                    total_assets = getattr(hunt, "total_assets", None)
+
+                    lines.append(f"{i}. {title}")
+                    meta_parts = []
+                    if status:
+                        meta_parts.append(f"Status: {status}")
+                    if hunt_type:
+                        meta_parts.append(f"Type: {hunt_type}")
+                    if total_findings is not None:
+                        meta_parts.append(f"Findings: {total_findings}")
+                    if total_assets is not None:
+                        meta_parts.append(f"Assets: {total_assets}")
+                    if meta_parts:
+                        lines.append(f"   {' | '.join(meta_parts)}")
+                    if cves:
+                        cve_str = ", ".join(str(cve) for cve in cves[:5])
+                        lines.append(f"   CVEs: {cve_str}")
+                    lines.append("")
+
+            if ttp_library:
+                lines.append("Matching TTP Library Tactics:")
+                for i, tactic in enumerate(ttp_library, 1):
+                    name = getattr(tactic, "name", "") or "Unnamed tactic"
+                    identifier = getattr(tactic, "identifier", None)
+                    tactic_type = getattr(tactic, "type", None)
+                    category = getattr(tactic, "category", None)
+                    category_name = getattr(category, "name", None) if category else None
+                    module = getattr(tactic, "module", None)
+
+                    lines.append(f"{i}. {name}")
+                    meta_parts = []
+                    if identifier:
+                        meta_parts.append(f"Identifier: {identifier}")
+                    if tactic_type:
+                        meta_parts.append(f"Type: {tactic_type}")
+                    if category_name:
+                        meta_parts.append(f"Category: {category_name}")
+                    if module:
+                        meta_parts.append(f"Module: {module}")
+                    if meta_parts:
+                        lines.append(f"   {' | '.join(meta_parts)}")
+                    lines.append("")
+
             return "\n".join(lines)
         except Exception as e:
             return f"Error: {str(e)}"

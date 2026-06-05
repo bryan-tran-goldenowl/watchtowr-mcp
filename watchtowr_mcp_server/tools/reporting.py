@@ -14,6 +14,7 @@ from watchtowr_api_sdk.api.repositories_api import RepositoriesApi
 from watchtowr_api_sdk.api.containers_api import ContainersApi
 from watchtowr_api_sdk.api.saa_s_platforms_api import SaaSPlatformsApi
 from watchtowr_api_sdk.api.mobile_applications_api import MobileApplicationsApi
+from watchtowr_api_sdk.api.security_posture_dashboard_api import SecurityPostureDashboardApi
 
 from ..client import get_api_client, get_total, parse_date, severity_display, supported_kwargs
 from ..constants import SUMMARY_SEVERITIES
@@ -501,6 +502,81 @@ def register_reporting_tools(mcp):
             return "\n".join(lines)
         except Exception as e:
             return f"Error generating week-over-week delta: {e}"
+
+    @mcp.tool()
+    def get_security_posture() -> str:
+        """Get the security posture dashboard — overall score, coverage metrics, and trends.
+
+        Returns a summary of monitored assets, active hunts, open findings by severity,
+        and recent trends (new findings, resolved, mean time to resolve).
+        """
+        try:
+            api = SecurityPostureDashboardApi(get_api_client())
+            response = api.get_security_posture_dashboard()
+
+            data = response.data if hasattr(response, "data") else response
+            if not data:
+                return "Security posture data not available."
+
+            lines = ["Security Posture Dashboard:"]
+            lines.append("")
+
+            score = getattr(data, "score", None) or getattr(data, "overall_score", None)
+            if score is not None:
+                lines.append(f"Overall Score: {score}")
+                lines.append("")
+
+            lines.append("Coverage:")
+            assets = getattr(data, "total_assets", None) or getattr(data, "assets_monitored", None)
+            if assets is not None:
+                lines.append(f"  Assets Monitored: {assets}")
+
+            hunts = getattr(data, "active_hunts", None) or getattr(data, "total_hunts", None)
+            if hunts is not None:
+                lines.append(f"  Active Hunts: {hunts}")
+
+            findings = getattr(data, "findings", None) or getattr(data, "open_findings", None)
+            if findings is not None:
+                if isinstance(findings, dict):
+                    total_f = findings.get("total", 0)
+                    critical = findings.get("critical", 0)
+                    high = findings.get("high", 0)
+                    lines.append(f"  Open Findings: {total_f} ({critical} Critical, {high} High)")
+                else:
+                    lines.append(f"  Open Findings: {findings}")
+
+            trends = getattr(data, "trends", None)
+            if trends:
+                lines.append("")
+                lines.append("Trends (30d):")
+                new_f = getattr(trends, "new_findings", None)
+                resolved = getattr(trends, "resolved", None)
+                mttr = getattr(trends, "mean_time_to_resolve", None)
+                if new_f is not None:
+                    lines.append(f"  New Findings: {new_f}")
+                if resolved is not None:
+                    lines.append(f"  Resolved: {resolved}")
+                if mttr is not None:
+                    lines.append(f"  Mean Time to Resolve: {mttr}")
+
+            # Fallback: if we matched nothing useful, dump all non-None attributes
+            if len(lines) <= 3:
+                lines.append("")
+                for attr in dir(data):
+                    if not attr.startswith("_") and attr not in (
+                        "to_dict",
+                        "to_str",
+                        "attribute_map",
+                        "model_fields",
+                        "model_config",
+                    ):
+                        val = getattr(data, attr, None)
+                        if val is not None and not callable(val):
+                            lines.append(f"  {attr}: {val}")
+
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Error: {str(e)}"
 
     @mcp.tool()
     def get_top_findings_by_occurrence(page_size: int = 30) -> str:

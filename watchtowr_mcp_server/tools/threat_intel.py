@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from watchtowr_api_sdk.api.suspicious_domains_api import SuspiciousDomainsApi
 from watchtowr_api_sdk.api.points_of_interest_api import PointsOfInterestApi
 from watchtowr_api_sdk.api.certificates_api import CertificatesApi
+from watchtowr_api_sdk.api.pending_domains_api import PendingDomainsApi
 
 from ..client import get_api_client, get_total, parse_date, format_bus
 
@@ -349,3 +350,72 @@ def register_threat_intel_tools(mcp):
             return header + "\n" + "\n".join(lines)
         except Exception as e:
             return f"Error listing expiring certificates: {e}"
+
+    # ── Pending Domains ───────────────────────────────────────────
+
+    @mcp.tool()
+    def search_pending_domains(
+        name: str = None,
+        source: str = None,
+        start_date: str = None,
+        end_date: str = None,
+        sort_by: str = None,
+        sort_order: str = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> str:
+        """List pending/unclaimed domains that could be claimed by adversaries.
+
+        These are domains found via DNS analysis (e.g. CNAME to expired domain,
+        NS pointing to unregistered nameserver) that represent takeover risks.
+
+        Args:
+            name: Filter by domain name.
+            source: Filter by discovery source.
+            start_date: Start date filter (YYYY-MM-DD).
+            end_date: End date filter (YYYY-MM-DD).
+            sort_by: Sort field.
+            sort_order: Sort direction (asc/desc).
+            page: Page number.
+            page_size: Results per page (max 30).
+        """
+        try:
+            api = PendingDomainsApi(get_api_client())
+            kwargs = {"page": page, "page_size": min(page_size, 30)}
+            if name:
+                kwargs["name"] = name
+            if source:
+                kwargs["source"] = source
+            if start_date:
+                kwargs["start_date"] = parse_date(start_date)
+            if end_date:
+                kwargs["end_date"] = parse_date(end_date)
+            if sort_by:
+                kwargs["sort_by"] = sort_by
+            if sort_order:
+                kwargs["sort_order"] = sort_order
+
+            response = api.get_list_pending_domains(**kwargs)
+
+            if not hasattr(response, "data") or not response.data:
+                return "No pending domains found."
+
+            total = get_total(response) or 0
+            lines = [f"Pending Domains ({len(response.data)} of {total}):", ""]
+
+            for i, domain in enumerate(response.data, 1):
+                did = getattr(domain, "id", "")
+                dname = getattr(domain, "name", "") or getattr(domain, "domain", "")
+                reason = getattr(domain, "source", "") or getattr(domain, "reason", "")
+                created = getattr(domain, "created_at", "") or getattr(domain, "discovered_at", "")
+
+                lines.append(f"{i}. ID: {did} | {dname}")
+                if reason:
+                    lines.append(f"   Source: {reason}")
+                if created:
+                    lines.append(f"   Discovered: {created}")
+                lines.append("")
+
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Error listing pending domains: {e}"
