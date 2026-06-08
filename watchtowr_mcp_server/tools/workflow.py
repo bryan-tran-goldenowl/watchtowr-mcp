@@ -192,7 +192,7 @@ def register_workflow_tools(mcp):
             for sev in SUMMARY_SEVERITIES:
                 kwargs = {
                     "severities": sev,
-                    "statuses": "confirmed,unconfirmed",
+                    "statuses": "confirmed",
                     "page_size": min(page_size, 30),
                 }
                 if assignee:
@@ -247,7 +247,7 @@ def register_workflow_tools(mcp):
                 try:
                     resp = findings_api.get_list_findings(
                         severities=sev,
-                        statuses="confirmed,unconfirmed",
+                        statuses="confirmed",
                         assignee="No Assignee",
                         page_size=min(page_size, 30),
                     )

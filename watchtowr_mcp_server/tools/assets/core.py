@@ -28,14 +28,14 @@ from watchtowr_api_sdk.models.create_client_note_dto import CreateClientNoteDto
 from watchtowr_api_sdk.models.ip_range_values import IpRangeValues
 from watchtowr_api_sdk.models.filter_by_business_unit_input import FilterByBusinessUnitInput
 
+from ...client import get_api_client, get_total, parse_date, format_bus, supported_kwargs
+
+
 VALID_SEED_ASSET_TYPES = [
     "domain", "subdomain", "ip", "ipRange", "repository",
     "cloudStorage", "container", "mobileApp", "saasPlatform",
     "apiDocumentation", "packageManager",
 ]
-
-from ...client import get_api_client, get_total, parse_date, format_bus, supported_kwargs
-
 
 ALL_ASSET_TYPES = [
     "domain", "subdomain", "ip", "ipRange", "cloudStorage", "container",
@@ -1830,7 +1830,7 @@ def register_asset_core_tools(mcp):
                 dto = UpdateClientLegacyAssetStatusDto(**dto_kwargs)
                 api = api_cls(client)
                 method = getattr(api, method_name)
-                param_name = f"update_client_legacy_asset_status_dto"
+                param_name = "update_client_legacy_asset_status_dto"
                 method(id=asset_id, **{param_name: dto})
             elif asset_type in nextgen_types:
                 api_cls, method_name = nextgen_types[asset_type]

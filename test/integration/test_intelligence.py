@@ -4,15 +4,16 @@ from ._helpers import assert_ok
 
 pytestmark = pytest.mark.live
 
+
 def test_list_vulnerability_intelligence(live_env, call):
     assert_ok(call("list_vulnerability_intelligence", page_size=5), allow_empty=True)
 
 
 def test_get_vulnerability_intelligence_details(live_env, call):
-    # Try a well-known CVE
-    result = call("get_vulnerability_intelligence_details", identifier="CVE-2024-3400")
-    # May not exist in tenant — allow error
-    assert result is not None
+    response = call("get_vulnerability_intelligence_details", identifier="CVE-2024-3400")
+    assert isinstance(response, str) and response, "tool returned no usable response"
+    if response.startswith("Error"):
+        assert "(404)" in response, f"unexpected error (not a 404 not-found): {response[:200]}"
 
 
 def test_list_adversary_intelligence(live_env, call):
@@ -44,8 +45,8 @@ def test_search_active_defense_library_with_query(live_env, call):
 
 
 @pytest.mark.live
-def test_search_capabilities(live_env, call):
-    response = call("search_capabilities", query="log4j")
+def test_search_capabilities(live_env, call, sample_hunt_title):
+    response = call("search_capabilities", query=sample_hunt_title)
     assert_ok(response)
 
 

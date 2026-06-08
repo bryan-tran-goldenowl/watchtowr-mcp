@@ -4,7 +4,7 @@ A [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server that c
 
 ## Features
 
-- **109 tools** covering the full watchTowr Platform API — assets, findings, hunts, certificates, suspicious domains, and more
+- **116 tools** covering the full watchTowr Platform API — assets, findings, hunts, certificates, suspicious domains, and more
 - **Read and write** — query your attack surface and take action (update statuses, trigger retests, submit seed assets)
 - **Composite intelligence** — built-in tools for attack surface summaries, change detection, executive scorecards, and compliance reporting
 - **Secure** — authenticates via API key with tenant isolation; credentials never leave your environment
@@ -47,7 +47,7 @@ uv sync
 Build the image:
 
 ```bash
-git clone https://github.com/watchtowr/watchtowr-mcp.git
+git clone --recurse-submodules https://github.com/watchtowr/watchtowr-mcp.git
 cd watchtowr-mcp
 docker build -t watchtowr-mcp .
 ```
@@ -141,7 +141,7 @@ docker run -d --rm \
 | `get_unresolved_findings_by_business_unit` | List unresolved findings for a specific business unit |
 | `export_finding_pdf` | Export a finding report as PDF |
 
-### Assets (35 tools)
+### Assets (38 tools)
 
 | Tool | Description |
 |------|-------------|
@@ -180,6 +180,9 @@ docker run -d --rm \
 | `get_cloud_asset_details` | Full detail for a specific cloud asset |
 | `list_package_managers` | List discovered package manager registry assets |
 | `get_package_manager_details` | Full detail for a specific package manager asset |
+| `get_asset_changelog` | Get change history for a specific asset |
+| `get_asset_dns_records` | Get DNS records associated with a specific asset by name |
+| `search_dns_records` | Search DNS records across discovered assets |
 
 ### Hunts (6 tools)
 
@@ -192,7 +195,7 @@ docker run -d --rm \
 | `search_hunts` | Search hunts by keyword, status, type, priority, date |
 | `get_hunt_impact_summary` | Combined summary: detail, severity breakdown, assets tested |
 
-### Threat Intelligence (6 tools)
+### Threat Intelligence (7 tools)
 
 | Tool | Description |
 |------|-------------|
@@ -202,8 +205,9 @@ docker run -d --rm \
 | `list_certificates` | List SSL/TLS certificates with subject, issuer, and expiry |
 | `get_certificate_details` | Full certificate detail including SANs and key info |
 | `get_expiring_certificates` | List certificates expiring within N days |
+| `search_pending_domains` | Search pending domains awaiting verification or discovery processing |
 
-### Intelligence (9 tools)
+### Intelligence (11 tools)
 
 | Tool | Description |
 |------|-------------|
@@ -216,6 +220,8 @@ docker run -d --rm \
 | `list_credential_attempt_logs` | List credential stuffing attempt logs |
 | `list_finding_retest_history` | List retest history across all findings |
 | `get_finding_retest_history_details` | Get retest history for a specific finding |
+| `search_active_defense_library` | Search active defense library rules by name, capability, or technique |
+| `search_capabilities` | Search watchTowr capabilities by keyword or category |
 
 ### Services (2 tools)
 
@@ -252,7 +258,7 @@ docker run -d --rm \
 | `get_asset_findings_count_by_type` | Unresolved findings heatmap by asset type |
 | `get_shadow_it_candidates` | New assets not assigned to any business unit |
 
-### Reporting & Compliance (11 tools)
+### Reporting & Compliance (12 tools)
 
 | Tool | Description |
 |------|-------------|
@@ -267,6 +273,7 @@ docker run -d --rm \
 | `get_executive_risk_scorecard` | Single-call executive dashboard: assets, findings, KEV, cert health |
 | `get_week_over_week_delta` | Weekly trend report: new assets and findings per week |
 | `get_top_findings_by_occurrence` | Most frequently recurring finding titles — systemic issues |
+| `get_security_posture` | Security posture dashboard summary with executive risk metrics |
 
 ### Incident Response (5 tools)
 

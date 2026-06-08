@@ -453,7 +453,7 @@ def register_findings_tools(mcp):
             api = FindingsApi(get_api_client())
             kwargs = {
                 "business_unit_ids": business_unit_id,
-                "statuses": "confirmed,unconfirmed",
+                "statuses": "confirmed",
                 "page_size": min(page_size, 30),
             }
             if severities:

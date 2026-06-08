@@ -3,22 +3,8 @@ from watchtowr_api_sdk.api.service_discovery_api import ServiceDiscoveryApi
 from watchtowr_api_sdk.api.ip_addresses_api import IPAddressesApi
 from watchtowr_api_sdk.api.domains_api import DomainsApi
 from watchtowr_api_sdk.api.subdomains_api import SubdomainsApi
-from watchtowr_api_sdk.api.ports_api import PortsApi
 
 from ..client import get_api_client, get_total, severity_display
-
-
-import inspect
-
-def _filter_kwargs(func, kwargs):
-    sig = inspect.signature(func)
-    return {k: v for k, v in kwargs.items() if k in sig.parameters}
-
-def _count(api_instance, method_name, **kwargs):
-    method = getattr(api_instance, method_name)
-    valid_kwargs = _filter_kwargs(method, kwargs)
-    response = method(page_size=1, **valid_kwargs)
-    return get_total(response) or (len(response.data) if hasattr(response, 'data') and response.data else 0)
 
 
 def register_incident_tools(mcp):
@@ -34,8 +20,6 @@ def register_incident_tools(mcp):
         try:
             client = get_api_client()
             lines = [f"Assets in Country: {country_code.upper()}", ""]
-
-            lines.append("")
 
             svc_api = ServiceDiscoveryApi(client)
             svc_resp = svc_api.get_list_service_listing(countries=country_code.upper(), page_size=min(page_size, 30))

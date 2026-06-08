@@ -38,6 +38,7 @@ _ASSET_API_MAP = [
 def _count(api_instance, method_name, **kwargs):
     """Call a list method with page_size=1 and extract the total count."""
     method = getattr(api_instance, method_name)
+    kwargs.pop("page_size", None)
     safe = supported_kwargs(method, kwargs)
     response = method(page_size=1, **safe)
     return get_total(response) or (len(response.data) if hasattr(response, 'data') and response.data else 0)
@@ -225,7 +226,7 @@ def register_composite_tools(mcp):
                         findings_api, "get_list_findings",
                         severities=severity,
                         business_unit_ids=business_unit_id,
-                        statuses="confirmed,unconfirmed",
+                        statuses="confirmed",
                     )
                     total_findings += count
                     lines.append(f"  • {severity_display(severity)}: {count}")
@@ -644,7 +645,7 @@ def register_composite_tools(mcp):
             cutoff = datetime.now() - timedelta(days=days)
 
             resp = findings_api.get_list_findings(
-                statuses="confirmed,unconfirmed",
+                statuses="confirmed",
                 created_to=cutoff,
                 page_size=min(page_size, 30),
             )
@@ -685,7 +686,7 @@ def register_composite_tools(mcp):
             for severity in SUMMARY_SEVERITIES[:2]:  # critical, high
                 resp = findings_api.get_list_findings(
                     severities=severity,
-                    statuses="confirmed,unconfirmed",
+                    statuses="confirmed",
                     assignee="No Assignee",
                     page_size=min(page_size, 30),
                 )
@@ -735,7 +736,7 @@ def register_composite_tools(mcp):
                     count = _count(
                         findings_api, "get_list_findings",
                         asset_types=at,
-                        statuses="confirmed,unconfirmed",
+                        statuses="confirmed",
                     )
                     total += count
                     if count > 0:
@@ -799,9 +800,6 @@ def register_composite_tools(mcp):
 
 def _fetch_asset_detail(client, asset_type: str, asset_id) -> list[str]:
     """Fetch detailed info for an asset given its type, returning formatted lines."""
-    type_lower = str(asset_type).lower().replace(" ", "_")
-    lines = []
-
     dispatch = {
         "ip": (IPAddressesApi, "get_asset_ip_details", ["name", "status", "country", "live", "source"]),
         "ip_address": (IPAddressesApi, "get_asset_ip_details", ["name", "status", "country", "live", "source"]),
@@ -816,10 +814,17 @@ def _fetch_asset_detail(client, asset_type: str, asset_id) -> list[str]:
         "mobile_app": (MobileApplicationsApi, "get_asset_mobile_app_details", ["name", "publisher", "platform", "url", "status"]),
     }
 
-    if type_lower not in dispatch:
+    
+    def _normalize(t) -> str:
+        return str(t).lower().replace(" ", "").replace("_", "")
+
+    lookup = {_normalize(k): k for k in dispatch}
+    key = lookup.get(_normalize(asset_type))
+    if key is None:
         return [f"(Unknown asset type: {asset_type})"]
 
-    api_cls, method_name, fields = dispatch[type_lower]
+    lines = []
+    api_cls, method_name, fields = dispatch[key]
     api = api_cls(client)
     method = getattr(api, method_name)
 

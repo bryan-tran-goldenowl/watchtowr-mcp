@@ -145,6 +145,30 @@ def sample_hunt_id(live_env, call) -> int:
     return _sample_via_list(call, "search_hunts", "hunts", page_size=5)
 
 
+
+_HUNT_TITLE_PATTERN = re.compile(r"\[ID:\d+\]\s+(.+?)\s+-\s+")
+
+
+@pytest.fixture(scope="session")
+def sample_hunt_title(live_env, call) -> str:
+    """Return a real hunt title from the tenant to drive capability search.
+
+    capability_search matches hunts by title, so we derive the query from an
+    actual hunt instead of hardcoding a term that may not exist in the tenant.
+    Skips when the tenant has no hunts or no title >= 3 chars (DTO min length).
+    """
+    response = call("search_hunts", page_size=30)
+    if isinstance(response, str) and response.startswith("Error"):
+        pytest.skip(f"search_hunts returned error: {response!r}")
+
+    for title in _HUNT_TITLE_PATTERN.findall(response or ""):
+        title = title.strip()
+        if len(title) >= 3 and title.lower() != "unnamed":
+            return title
+
+    pytest.skip("no hunt with a usable title (>=3 chars) found in this tenant")
+
+
 @pytest.fixture(scope="session")
 def sample_bu_id(live_env, call) -> int:
     return _sample_via_list(call, "list_business_units", "business units")

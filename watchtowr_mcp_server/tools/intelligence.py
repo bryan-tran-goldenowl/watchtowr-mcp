@@ -37,7 +37,7 @@ def register_intelligence_tools(mcp):
                 return "No vulnerability intelligence entries found."
             
             total = get_total(response) or 0
-            lines = [f"Vulnerability Intelligence ({min(page_size, len(response.data))} of {total}):"]
+            lines = [f"Vulnerability Intelligence ({len(response.data)} of {total}):"]
             for v in response.data:
                 vid = getattr(v, 'vulnerability_id', '')
                 title = getattr(v, 'display_name', '') or getattr(v, 'title', 'Untitled')

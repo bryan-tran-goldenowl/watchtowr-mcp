@@ -35,6 +35,7 @@ _ASSET_API_MAP = [
 
 def _count(api_instance, method_name, **kwargs):
     method = getattr(api_instance, method_name)
+    kwargs.pop("page_size", None)
     safe = supported_kwargs(method, kwargs)
     response = method(page_size=1, **safe)
     return get_total(response) or (len(response.data) if hasattr(response, 'data') and response.data else 0)
@@ -150,7 +151,6 @@ def register_reporting_tools(mcp):
                     api = api_cls(client)
                     all_count = _count(api, method_name)
                     verified_count = _count(api, method_name, statuses="verified")
-                    unverified = all_count - verified_count
 
                     total_all += all_count
                     total_verified += verified_count
@@ -184,7 +184,7 @@ def register_reporting_tools(mcp):
             lines = ["Finding Age Distribution (Open/Unresolved):", ""]
 
             for label, created_from, created_to in buckets:
-                kwargs = {"statuses": "confirmed,unconfirmed", "page_size": 1}
+                kwargs = {"statuses": "confirmed", "page_size": 1}
                 if created_from and not created_to:
                     kwargs["created_from"] = created_from
                 elif created_to and not created_from:
@@ -194,16 +194,16 @@ def register_reporting_tools(mcp):
                     kwargs["created_to"] = created_to
 
                 try:
-                    count = _count(findings_api, "get_list_findings", **{k: v for k, v in kwargs.items() if k != "page_size"})
+                    count = _count(findings_api, "get_list_findings", **kwargs)
                 except Exception:
                     count = "error"
 
                 severity_breakdown = []
                 for sev in SUMMARY_SEVERITIES:
                     try:
-                        sev_kwargs = {**kwargs, "severities": sev}
-                        sev_kwargs.pop("page_size", None)
-                        sev_count = _count(findings_api, "get_list_findings", **sev_kwargs)
+                        sev_count = _count(
+                            findings_api, "get_list_findings", **{**kwargs, "severities": sev}
+                        )
                         if sev_count > 0:
                             severity_breakdown.append(f"{sev[0].upper()}:{sev_count}")
                     except Exception:
@@ -322,7 +322,7 @@ def register_reporting_tools(mcp):
                     total_findings = _count(
                         findings_api, "get_list_findings",
                         asset_types=at,
-                        statuses="confirmed,unconfirmed",
+                        statuses="confirmed",
                     )
 
                     matching_asset_api = None
@@ -417,7 +417,7 @@ def register_reporting_tools(mcp):
             total_findings = 0
             for sev in SUMMARY_SEVERITIES:
                 try:
-                    c = _count(findings_api, "get_list_findings", severities=sev, statuses="confirmed,unconfirmed")
+                    c = _count(findings_api, "get_list_findings", severities=sev, statuses="confirmed")
                     total_findings += c
                     lines.append(f"  • {severity_display(sev)}: {c}")
                 except Exception:
@@ -425,13 +425,13 @@ def register_reporting_tools(mcp):
             lines.append(f"  Total Open: {total_findings}")
 
             try:
-                kev = _count(findings_api, "get_list_findings", tags="CISA-KEV", statuses="confirmed,unconfirmed")
+                kev = _count(findings_api, "get_list_findings", tags="CISA-KEV", statuses="confirmed")
                 lines.append(f"\nCISA-KEV (Open): {kev}")
             except Exception:
                 pass
 
             try:
-                resp = findings_api.get_list_findings(statuses="confirmed,unconfirmed", page_size=30)
+                resp = findings_api.get_list_findings(statuses="confirmed", page_size=30)
                 if hasattr(resp, 'data') and resp.data:
                     ages = []
                     for f in resp.data:
@@ -590,7 +590,7 @@ def register_reporting_tools(mcp):
             findings_api = FindingsApi(client)
 
             resp = findings_api.get_list_findings(
-                statuses="confirmed,unconfirmed",
+                statuses="confirmed",
                 page_size=min(page_size, 30),
             )
 
