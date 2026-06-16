@@ -32,6 +32,14 @@ def test_list_finding_retest_history(live_env, call):
     assert_ok(call("list_finding_retest_history", page_size=5), allow_empty=True)
 
 
+@pytest.mark.parametrize("result", ["resolved", "unresolved"])
+def test_list_finding_retest_history_by_result(live_env, call, result):
+    assert_ok(
+        call("list_finding_retest_history", retest_result_statuses=result, page_size=5),
+        allow_empty=True,
+    )
+
+
 @pytest.mark.live
 def test_search_active_defense_library(live_env, call):
     response = call("search_active_defense_library", page_size=5)
@@ -54,3 +62,22 @@ def test_search_capabilities(live_env, call, sample_hunt_title):
 def test_search_capabilities_cve(live_env, call):
     response = call("search_capabilities", query="CVE-2021")
     assert_ok(response)
+
+
+def test_get_adversary_intelligence_details(live_env, call, sample_adversary_id):
+    response = call("get_adversary_intelligence_details", attacker_id=sample_adversary_id)
+    assert_ok(response)
+
+
+def test_get_compromised_endpoint_credentials(live_env, call, sample_compromised_endpoint_id):
+    assert_ok(
+        call("get_compromised_endpoint_credentials", endpoint_id=sample_compromised_endpoint_id, page_size=5),
+        allow_empty=True,
+    )
+
+
+def test_get_finding_retest_history_details(live_env, call, sample_finding_id):
+    assert_ok(
+        call("get_finding_retest_history_details", finding_id=sample_finding_id),
+        allow_empty=True,
+    )

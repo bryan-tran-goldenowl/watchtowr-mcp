@@ -118,7 +118,12 @@ def register_asset_dns_tools(mcp):
                 rtype = getattr(record, "record_type", "") or getattr(record, "type", "")
                 name = getattr(record, "record_name", "") or getattr(record, "name", "")
                 value = getattr(record, "record_value", "") or getattr(record, "value", "")
-                asset = getattr(record, "asset_name", "") or getattr(record, "asset", "")
+                asset_obj = getattr(record, "asset", None)
+                asset_name_val = getattr(asset_obj, "name", "") if asset_obj else ""
+                if asset_name_val:
+                    asset = f"{asset_name_val} ({getattr(asset_obj, 'type', '')})"
+                else:
+                    asset = ""
                 lines.append(f"{rtype:<8}| {name:<30}| {value:<40}| {asset}")
 
             return "\n".join(lines)

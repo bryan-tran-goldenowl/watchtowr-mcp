@@ -136,6 +136,19 @@ SDK_CALLS = [
     ("watchtowr_api_sdk.api.active_defense_library_api", "ActiveDefenseLibraryApi", "get_list_active_defense_library_rules"),
     # Capability search
     ("watchtowr_api_sdk.api.capability_search_api", "CapabilitySearchApi", "capability_search"),
+    # Changelogs
+    ("watchtowr_api_sdk.api.api_documentation_api", "APIDocumentationApi", "get_asset_api_documentation_changelog"),
+    ("watchtowr_api_sdk.api.cloud_integration_assets_api", "CloudIntegrationAssetsApi", "get_asset_cloud_asset_changelog"),
+    ("watchtowr_api_sdk.api.cloud_storage_api", "CloudStorageApi", "get_asset_cloud_storage_changelog"),
+    ("watchtowr_api_sdk.api.containers_api", "ContainersApi", "get_asset_container_changelog"),
+    ("watchtowr_api_sdk.api.domains_api", "DomainsApi", "get_asset_domain_changelog"),
+    ("watchtowr_api_sdk.api.ip_addresses_api", "IPAddressesApi", "get_asset_ip_changelog"),
+    ("watchtowr_api_sdk.api.ip_ranges_api", "IPRangesApi", "get_asset_iprange_changelog"),
+    ("watchtowr_api_sdk.api.mobile_applications_api", "MobileApplicationsApi", "get_asset_mobile_app_changelog"),
+    ("watchtowr_api_sdk.api.package_managers_api", "PackageManagersApi", "get_asset_package_manager_changelog"),
+    ("watchtowr_api_sdk.api.repositories_api", "RepositoriesApi", "get_asset_repository_changelog"),
+    ("watchtowr_api_sdk.api.saa_s_platforms_api", "SaaSPlatformsApi", "get_asset_saas_platform_changelog"),
+    ("watchtowr_api_sdk.api.subdomains_api", "SubdomainsApi", "get_asset_subdomain_changelog"),
 ]
 
 
@@ -177,8 +190,8 @@ def test_sdk_infra_resolves(module, cls):
 
 def test_sdk_call_count_matches_expectation():
     """If this fails, the SDK_CALLS list and the MCP source have drifted."""
-    assert len(SDK_CALLS) == 76, (
-        "Expected 76 distinct SDK (class, method) call sites. Update both this "
+    assert len(SDK_CALLS) == 88, (
+        "Expected 88 distinct SDK (class, method) call sites. Update both this "
         "constant and SDK_CALLS when you add/remove an SDK call in the MCP tools."
     )
 

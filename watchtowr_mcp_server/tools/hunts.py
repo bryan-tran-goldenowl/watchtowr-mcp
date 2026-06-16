@@ -164,7 +164,10 @@ def register_hunt_tools(mcp):
             total = get_total(response)
             lines = []
             for a in response.data:
-                aid = getattr(a, 'id', '')
+                raw_id = getattr(a, 'id', '')
+                aid = getattr(raw_id, 'actual_instance', raw_id)
+                if aid is None:
+                    aid = ''
                 name = getattr(a, 'name', 'Unknown')
                 asset_type = getattr(a, 'type', '')
                 status = getattr(a, 'status', 'Unknown')

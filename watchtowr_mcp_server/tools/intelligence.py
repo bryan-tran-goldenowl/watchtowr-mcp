@@ -73,7 +73,12 @@ def register_intelligence_tools(mcp):
                         wt_str += f" ({wt_risk})"
                     extra_parts.append(wt_str)
                 if kev_types:
-                    extra_parts.append(f"KEV: {', '.join(str(k) for k in kev_types)}")
+                    kev_parts = []
+                    for source in ("cisa", "vulncheck", "watchtowr"):
+                        if getattr(kev_types, source, False):
+                            kev_parts.append(source)
+                    if kev_parts:
+                        extra_parts.append(f"KEV: {', '.join(kev_parts)}")
                 if extra_parts:
                     lines.append(f"  {' | '.join(extra_parts)}")
             return "\n".join(lines)
@@ -137,14 +142,23 @@ def register_intelligence_tools(mcp):
             cvss = getattr(v, 'cvss_v3x_metrics', None)
             if cvss:
                 lines.append(f"CVSS v3.x: {cvss}")
-            
+
+            access_vector = getattr(v, 'access_vector', None) or getattr(v, 'accessVector', None)
+            if access_vector:
+                lines.append(f"Access Vector: {access_vector}")
+
             kev = getattr(v, 'kev_details', None)
             if kev:
                 lines.append(f"KEV Details: {kev}")
-            
+
             cwes = getattr(v, 'kb_entry_cwes', [])
             if cwes:
-                lines.append(f"CWEs: {', '.join(str(c) for c in cwes)}")
+                cwe_parts = []
+                for c in cwes:
+                    cwe_id = getattr(c, 'cwe_id', None) or (c if isinstance(c, str) else str(c))
+                    cwe_url = getattr(c, 'cwe_url', None) or getattr(c, 'cweUrl', None)
+                    cwe_parts.append(f"{cwe_id} ({cwe_url})" if cwe_url else str(cwe_id))
+                lines.append(f"CWEs: {', '.join(cwe_parts)}")
             
             attacker_summary = getattr(v, 'first_reported_by_attacker_summary', '')
             if attacker_summary:
@@ -491,6 +505,7 @@ def register_intelligence_tools(mcp):
         asset_name: str = None,
         severities: str = None,
         retest_run_statuses: str = None,
+        retest_result_statuses: str = None,
         attempts: str = None,
         triggered_by: str = None,
         business_unit_ids: str = None,
@@ -500,13 +515,14 @@ def register_intelligence_tools(mcp):
         page_size: int = 30,
     ) -> str:
         """List finding retest history across all findings (global audit view).
-        
+
         Args:
             finding_id: Filter by finding ID.
             finding_title: Filter by finding title.
             asset_name: Filter by asset name.
             severities: Comma-separated severities.
-            retest_run_statuses: Comma-separated retest statuses.
+            retest_run_statuses: Comma-separated retest run statuses.
+            retest_result_statuses: Comma-separated result statuses (resolved, unresolved).
             attempts: Comma-separated attempt types.
             triggered_by: Comma-separated trigger sources.
             business_unit_ids: Comma-separated BU IDs.
@@ -518,12 +534,13 @@ def register_intelligence_tools(mcp):
         try:
             api = FindingRetestHistoryApi(get_api_client())
             kwargs = {"page": page, "page_size": min(page_size, 30)}
-            
+
             if finding_id: kwargs["finding_id"] = finding_id
             if finding_title: kwargs["finding_title"] = finding_title
             if asset_name: kwargs["asset_name"] = asset_name
             if severities: kwargs["severities"] = severities
             if retest_run_statuses: kwargs["retest_run_statuses"] = retest_run_statuses
+            if retest_result_statuses: kwargs["retest_result_statuses"] = retest_result_statuses
             if attempts: kwargs["attempts"] = attempts
             if triggered_by: kwargs["triggered_by"] = [x.strip() for x in triggered_by.split(",")]
             if business_unit_ids: kwargs["business_unit_ids"] = business_unit_ids

@@ -309,6 +309,12 @@ def register_asset_core_tools(mcp):
             bus = format_bus(getattr(ip, 'business_units', []))
             if bus:
                 lines.append(f"Business Units:{bus}")
+            discovery_reason = getattr(ip, 'discovery_reason', None)
+            if discovery_reason:
+                lines.append(f"Discovery Reason: {discovery_reason}")
+            metadata = getattr(ip, 'metadata', None)
+            if metadata and metadata != {}:
+                lines.append(f"Metadata: {metadata}")
             return "\n".join(lines)
         except Exception as e:
             return f"Error retrieving IP address details: {e}"
@@ -489,6 +495,12 @@ def register_asset_core_tools(mcp):
             bus = format_bus(getattr(d, 'business_units', []))
             if bus:
                 lines.append(f"Business Units:{bus}")
+            discovery_reason = getattr(d, 'discovery_reason', None)
+            if discovery_reason:
+                lines.append(f"Discovery Reason: {discovery_reason}")
+            metadata = getattr(d, 'metadata', None)
+            if metadata and metadata != {}:
+                lines.append(f"Metadata: {metadata}")
             return "\n".join(lines)
         except Exception as e:
             return f"Error retrieving domain details: {e}"
@@ -578,6 +590,12 @@ def register_asset_core_tools(mcp):
             bus = format_bus(getattr(s, 'business_units', []))
             if bus:
                 lines.append(f"Business Units:{bus}")
+            discovery_reason = getattr(s, 'discovery_reason', None)
+            if discovery_reason:
+                lines.append(f"Discovery Reason: {discovery_reason}")
+            metadata = getattr(s, 'metadata', None)
+            if metadata and metadata != {}:
+                lines.append(f"Metadata: {metadata}")
             return "\n".join(lines)
         except Exception as e:
             return f"Error retrieving subdomain details: {e}"
@@ -778,6 +796,12 @@ def register_asset_core_tools(mcp):
             bus = format_bus(getattr(r, 'business_units', []))
             if bus:
                 lines.append(f"Business Units:{bus}")
+            discovery_reason = getattr(r, 'discovery_reason', None)
+            if discovery_reason:
+                lines.append(f"Discovery Reason: {discovery_reason}")
+            metadata = getattr(r, 'metadata', None)
+            if metadata and metadata != {}:
+                lines.append(f"Metadata: {metadata}")
             return "\n".join(lines)
         except Exception as e:
             return f"Error retrieving IP range details: {e}"
@@ -873,6 +897,12 @@ def register_asset_core_tools(mcp):
             bus = format_bus(getattr(cs, 'business_units', []))
             if bus:
                 lines.append(f"Business Units:{bus}")
+            discovery_reason = getattr(cs, 'discovery_reason', None)
+            if discovery_reason:
+                lines.append(f"Discovery Reason: {discovery_reason}")
+            metadata = getattr(cs, 'metadata', None)
+            if metadata and metadata != {}:
+                lines.append(f"Metadata: {metadata}")
             return "\n".join(lines)
         except Exception as e:
             return f"Error retrieving cloud storage details: {e}"
@@ -968,6 +998,12 @@ def register_asset_core_tools(mcp):
             bus = format_bus(getattr(r, 'business_units', []))
             if bus:
                 lines.append(f"Business Units:{bus}")
+            discovery_reason = getattr(r, 'discovery_reason', None)
+            if discovery_reason:
+                lines.append(f"Discovery Reason: {discovery_reason}")
+            metadata = getattr(r, 'metadata', None)
+            if metadata and metadata != {}:
+                lines.append(f"Metadata: {metadata}")
             return "\n".join(lines)
         except Exception as e:
             return f"Error retrieving repository details: {e}"
@@ -1064,6 +1100,12 @@ def register_asset_core_tools(mcp):
             bus = format_bus(getattr(c, 'business_units', []))
             if bus:
                 lines.append(f"Business Units:{bus}")
+            discovery_reason = getattr(c, 'discovery_reason', None)
+            if discovery_reason:
+                lines.append(f"Discovery Reason: {discovery_reason}")
+            metadata = getattr(c, 'metadata', None)
+            if metadata and metadata != {}:
+                lines.append(f"Metadata: {metadata}")
             return "\n".join(lines)
         except Exception as e:
             return f"Error retrieving container details: {e}"
@@ -1156,6 +1198,12 @@ def register_asset_core_tools(mcp):
             bus = format_bus(getattr(s, 'business_units', []))
             if bus:
                 lines.append(f"Business Units:{bus}")
+            discovery_reason = getattr(s, 'discovery_reason', None)
+            if discovery_reason:
+                lines.append(f"Discovery Reason: {discovery_reason}")
+            metadata = getattr(s, 'metadata', None)
+            if metadata and metadata != {}:
+                lines.append(f"Metadata: {metadata}")
             return "\n".join(lines)
         except Exception as e:
             return f"Error retrieving SaaS platform details: {e}"
@@ -1250,6 +1298,12 @@ def register_asset_core_tools(mcp):
                 f"Source: {getattr(m, 'source', 'N/A')}",
                 f"Created: {getattr(m, 'created_at', 'N/A')}",
             ]
+            discovery_reason = getattr(m, 'discovery_reason', None)
+            if discovery_reason:
+                lines.append(f"Discovery Reason: {discovery_reason}")
+            metadata = getattr(m, 'metadata', None)
+            if metadata and metadata != {}:
+                lines.append(f"Metadata: {metadata}")
             return "\n".join(lines)
         except Exception as e:
             return f"Error retrieving mobile app details: {e}"
@@ -1554,6 +1608,12 @@ def register_asset_core_tools(mcp):
             bus = format_bus(getattr(pm, 'business_units', []))
             if bus:
                 lines.append(f"Business Units:{bus}")
+            discovery_reason = getattr(pm, 'discovery_reason', None)
+            if discovery_reason:
+                lines.append(f"Discovery Reason: {discovery_reason}")
+            metadata = getattr(pm, 'metadata', None)
+            if metadata and metadata != {}:
+                lines.append(f"Metadata: {metadata}")
             return "\n".join(lines)
         except Exception as e:
             return f"Error retrieving package manager details: {e}"

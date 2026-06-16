@@ -171,10 +171,17 @@ def register_threat_intel_tools(mcp):
                 url = getattr(p, 'url', '')
                 asset_name = getattr(p, 'asset_name', '')
                 bus = format_bus(getattr(p, 'business_units', []))
+                
+                finding_id = getattr(p, 'finding_id', None) or getattr(p, 'findingId', None)
+                is_perm_suppress = getattr(p, 'is_permanent_suppression', None) or getattr(p, 'isPermanentSuppression', None)
+                
                 type_str = f" [{poi_type}]" if poi_type else ""
                 asset_str = f" on {asset_name}" if asset_name else ""
                 url_str = f" - {url}" if url else ""
-                lines.append(f"• [ID:{pid}] {name}{type_str}{asset_str}{url_str}{bus}")
+                finding_str = f" (Finding ID: {finding_id})" if finding_id else ""
+                suppress_str = " [Permanently Suppressed]" if is_perm_suppress else ""
+                
+                lines.append(f"• [ID:{pid}] {name}{type_str}{asset_str}{url_str}{bus}{finding_str}{suppress_str}")
 
             header = f"Points of Interest ({len(lines)}"
             if total:
@@ -289,11 +296,18 @@ def register_threat_intel_tools(mcp):
                     f"Issuer CN: {getattr(cert, 'issuer_common_name', 'N/A')}",
                     f"Issuer Org: {getattr(cert, 'issuer_organisation', 'N/A')}",
                     f"Issuer Country: {getattr(cert, 'issuer_country', 'N/A')}",
+                    f"Serial Number: {getattr(cert, 'serial_number', None) or getattr(cert, 'serialNumber', 'N/A')}",
                     f"Fingerprint: {getattr(cert, 'fingerprint', 'N/A')}",
                     f"Public Key: {getattr(cert, 'public_key_info_alg', '')} {getattr(cert, 'public_key_info_size', '')}",
+                    f"Valid From: {getattr(cert, 'not_before', None) or getattr(cert, 'notBefore', 'N/A')}",
+                    f"Valid Until: {getattr(cert, 'not_after', None) or getattr(cert, 'notAfter', 'N/A')}",
+                    f"Last Seen: {getattr(cert, 'last_seen_at', None) or getattr(cert, 'lastSeenAt', 'N/A')}",
                     f"Status: {getattr(cert, 'status', 'N/A')}",
                     f"Created: {getattr(cert, 'created_at', 'N/A')}",
                 ])
+                updated_at = getattr(cert, 'updated_at', None) or getattr(cert, 'updatedAt', None)
+                if updated_at:
+                    lines.append(f"Updated: {updated_at}")
                 sans = getattr(cert, 'subject_alt_names', [])
                 if sans:
                     lines.append(f"SANs ({len(sans)}): {', '.join(sans[:20])}")

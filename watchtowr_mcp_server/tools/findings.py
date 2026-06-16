@@ -57,7 +57,7 @@ def _retest_lines(finding) -> list[str]:
                 line += f" — completed {completed_at}"
             lines.append(line)
 
-    history = getattr(finding, 'finding_retests', None)
+    history = getattr(finding, 'retest_history', None)
     if isinstance(history, list) and history:
         lines.append(f"Retest History ({len(history)}):")
         for r in history[:5]:
@@ -239,6 +239,10 @@ def register_findings_tools(mcp):
             recommendation = getattr(finding, 'recommendation', None)
             if recommendation:
                 lines.append(f"\nRecommendation:\n{recommendation}")
+
+            references = getattr(finding, 'references', None)
+            if references and references != "No references.":
+                lines.append(f"\nReferences:\n{references}")
 
             tags = getattr(finding, 'tags', [])
             if tags:
