@@ -20,12 +20,12 @@ def test_list_adversary_intelligence(live_env, call):
     assert_ok(call("list_adversary_intelligence", page_size=5), allow_empty=True)
 
 
-def test_list_compromised_endpoints(live_env, call):
-    assert_ok(call("list_compromised_endpoints", page_size=5), allow_empty=True)
+# def test_list_compromised_endpoints(live_env, call):
+#     assert_ok(call("list_compromised_endpoints", page_size=5), allow_empty=True)
 
 
-def test_list_credential_attempt_logs(live_env, call):
-    assert_ok(call("list_credential_attempt_logs", page_size=5), allow_empty=True)
+# def test_list_credential_attempt_logs(live_env, call):
+#     assert_ok(call("list_credential_attempt_logs", page_size=5), allow_empty=True)
 
 
 def test_list_finding_retest_history(live_env, call):
@@ -69,11 +69,11 @@ def test_get_adversary_intelligence_details(live_env, call, sample_adversary_id)
     assert_ok(response)
 
 
-def test_get_compromised_endpoint_credentials(live_env, call, sample_compromised_endpoint_id):
-    assert_ok(
-        call("get_compromised_endpoint_credentials", endpoint_id=sample_compromised_endpoint_id, page_size=5),
-        allow_empty=True,
-    )
+# def test_get_compromised_endpoint_credentials(live_env, call, sample_compromised_endpoint_id):
+#     assert_ok(
+#         call("get_compromised_endpoint_credentials", endpoint_id=sample_compromised_endpoint_id, page_size=5),
+#         allow_empty=True,
+#     )
 
 
 def test_get_finding_retest_history_details(live_env, call, sample_finding_id):

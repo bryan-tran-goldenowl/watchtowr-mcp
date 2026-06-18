@@ -603,7 +603,7 @@ def register_composite_tools(mcp):
             detail_lines = _fetch_asset_detail(client, asset_type, asset_id)
             asset_name = None
             for line in detail_lines:
-                if "Name:" in line or "Iprange:" in line:
+                if "Name:" in line or "Iprange:" in line or "Url:" in line or "Ip:" in line:
                     asset_name = line.split(":", 1)[1].strip()
                     break
 

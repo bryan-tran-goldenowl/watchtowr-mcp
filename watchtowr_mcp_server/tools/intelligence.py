@@ -3,8 +3,8 @@
 
 from watchtowr_api_sdk.api.vulnerability_intelligence_api import VulnerabilityIntelligenceApi
 from watchtowr_api_sdk.api.adversary_intelligence_api import AdversaryIntelligenceApi
-from watchtowr_api_sdk.api.compromised_endpoints_api import CompromisedEndpointsApi
-from watchtowr_api_sdk.api.credential_attempt_logs_api import CredentialAttemptLogsApi
+# from watchtowr_api_sdk.api.compromised_endpoints_api import CompromisedEndpointsApi
+# from watchtowr_api_sdk.api.credential_attempt_logs_api import CredentialAttemptLogsApi
 from watchtowr_api_sdk.api.finding_retest_history_api import FindingRetestHistoryApi
 from watchtowr_api_sdk.api.active_defense_library_api import ActiveDefenseLibraryApi
 from watchtowr_api_sdk.api.capability_search_api import CapabilitySearchApi
@@ -293,6 +293,7 @@ def register_intelligence_tools(mcp):
             return f"Error: {str(e)}"
 
 
+    '''
     @mcp.tool()
     def list_compromised_endpoints(
         query: str = None,
@@ -496,6 +497,7 @@ def register_intelligence_tools(mcp):
             return "\n".join(lines)
         except Exception as e:
             return f"Error: {str(e)}"
+    '''
 
 
     @mcp.tool()

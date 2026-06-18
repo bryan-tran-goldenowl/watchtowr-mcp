@@ -120,10 +120,10 @@ SDK_CALLS = [
     ("watchtowr_api_sdk.api.adversary_intelligence_api", "AdversaryIntelligenceApi", "get_list_adversary_intelligence"),
     ("watchtowr_api_sdk.api.adversary_intelligence_api", "AdversaryIntelligenceApi", "get_adversary_intelligence_details"),
     # Compromised Endpoints
-    ("watchtowr_api_sdk.api.compromised_endpoints_api", "CompromisedEndpointsApi", "get_list_compromised_endpoints"),
-    ("watchtowr_api_sdk.api.compromised_endpoints_api", "CompromisedEndpointsApi", "get_list_compromised_endpoint_harvested_credentials"),
+    # ("watchtowr_api_sdk.api.compromised_endpoints_api", "CompromisedEndpointsApi", "get_list_compromised_endpoints"),
+    # ("watchtowr_api_sdk.api.compromised_endpoints_api", "CompromisedEndpointsApi", "get_list_compromised_endpoint_harvested_credentials"),
     # Credential Attempt Logs
-    ("watchtowr_api_sdk.api.credential_attempt_logs_api", "CredentialAttemptLogsApi", "get_list_credential_attempt_logs"),
+    # ("watchtowr_api_sdk.api.credential_attempt_logs_api", "CredentialAttemptLogsApi", "get_list_credential_attempt_logs"),
     # Finding Retest History
     ("watchtowr_api_sdk.api.finding_retest_history_api", "FindingRetestHistoryApi", "get_list_finding_retest_history"),
     # DNS records
@@ -190,8 +190,8 @@ def test_sdk_infra_resolves(module, cls):
 
 def test_sdk_call_count_matches_expectation():
     """If this fails, the SDK_CALLS list and the MCP source have drifted."""
-    assert len(SDK_CALLS) == 88, (
-        "Expected 88 distinct SDK (class, method) call sites. Update both this "
+    assert len(SDK_CALLS) == 85, (
+        "Expected 85 distinct SDK (class, method) call sites. Update both this "
         "constant and SDK_CALLS when you add/remove an SDK call in the MCP tools."
     )
 

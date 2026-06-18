@@ -254,7 +254,7 @@ def sample_adversary_id(live_env, call) -> int:
     return _sample_via_list(call, "list_adversary_intelligence", "adversary profiles", page_size=5)
 
 
-@pytest.fixture(scope="session")
-def sample_compromised_endpoint_id(live_env, call) -> int:
-    return _sample_via_list(call, "list_compromised_endpoints", "compromised endpoints", page_size=5)
+# @pytest.fixture(scope="session")
+# def sample_compromised_endpoint_id(live_env, call) -> int:
+#     return _sample_via_list(call, "list_compromised_endpoints", "compromised endpoints", page_size=5)
 

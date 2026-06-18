@@ -4,7 +4,7 @@ A [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server that c
 
 ## Features
 
-- **116 tools** covering the full watchTowr Platform API — assets, findings, hunts, certificates, suspicious domains, and more
+- **113 tools** covering the full watchTowr Platform API — assets, findings, hunts, certificates, suspicious domains, and more
 - **Read and write** — query your attack surface and take action (update statuses, trigger retests, submit seed assets)
 - **Composite intelligence** — built-in tools for attack surface summaries, change detection, executive scorecards, and compliance reporting
 - **Secure** — authenticates via API key with tenant isolation; credentials never leave your environment
@@ -207,7 +207,7 @@ docker run -d --rm \
 | `get_expiring_certificates` | List certificates expiring within N days |
 | `search_pending_domains` | Search pending domains awaiting verification or discovery processing |
 
-### Intelligence (11 tools)
+### Intelligence (8 tools)
 
 | Tool | Description |
 |------|-------------|
@@ -215,9 +215,11 @@ docker run -d --rm \
 | `get_vulnerability_intelligence_details` | Get full details for a CVE/vulnerability |
 | `list_adversary_intelligence` | List adversary/threat actor profiles |
 | `get_adversary_intelligence_details` | Get full details for a threat actor |
-| `list_compromised_endpoints` | List compromised endpoints from stealer logs |
-| `get_compromised_endpoint_credentials` | List harvested credentials for an endpoint |
-| `list_credential_attempt_logs` | List credential stuffing attempt logs |
+<!-- 
+  | `list_compromised_endpoints` | List compromised endpoints from stealer logs |
+  | `get_compromised_endpoint_credentials` | List harvested credentials for an endpoint |
+  | `list_credential_attempt_logs` | List credential stuffing attempt logs |
+-->
 | `list_finding_retest_history` | List retest history across all findings |
 | `get_finding_retest_history_details` | Get retest history for a specific finding |
 | `search_active_defense_library` | Search active defense library rules by name, capability, or technique |
