@@ -59,60 +59,28 @@ git submodule update --init --recursive
 uv sync
 ```
 
-After this one-time migration, use [routine SDK update](#routine-sdk-update).
-
-#### Routine SDK update
-
-If you already migrated (or cloned after the URL change), pull the latest SDK with:
-
-```bash
-git submodule update --remote --merge
-uv sync
-```
+This is a one-time migration. The SDK then stays pinned to the commit recorded in this repo; `git submodule update --init --recursive` always checks out that pinned commit.
 
 ### Docker
 
-The Docker image clones the SDK from GitHub during `docker build` (see `Dockerfile`) — it does not use the git submodule on your machine. Choose the path that matches your situation:
+The Docker image installs the SDK from the `watchtowr-api-sdk` submodule in your checkout (copied in at build time), so it uses the same pinned SDK commit as a local install. Make sure the submodule is checked out before building.
 
 #### New installation
 
-If you are setting up for the first time (or doing a fresh clone), clone the repo and build the image. **You do not need the migration steps below.**
-
 ```bash
-git clone https://github.com/watchtowr/watchtowr-mcp.git
+git clone --recurse-submodules https://github.com/watchtowr/watchtowr-mcp.git
 cd watchtowr-mcp
 docker build -t watchtowr-mcp .
 ```
 
-`--recurse-submodules` is optional for Docker-only workflows because the build fetches the SDK inside the image.
+If you cloned without `--recurse-submodules`, run `git submodule update --init --recursive` first.
 
-#### Existing clone (old SDK repository URL only)
+#### Existing clone (old submodule URL only)
 
-**Skip this section** if you used a fresh clone as shown above.
-
-If your checkout predates the SDK move to [`watchtowr-api-sdk-python`](https://github.com/watchtowr/watchtowr-api-sdk-python), pull and rebuild:
+If your checkout predates the SDK move to [`watchtowr-api-sdk-python`](https://github.com/watchtowr/watchtowr-api-sdk-python), run the [submodule migration](#existing-clone-old-submodule-url-only) under Local Installation first, then build:
 
 ```bash
-cd watchtowr-mcp
-git pull
 docker build -t watchtowr-mcp .
-```
-
-`git pull` updates the SDK URL in the `Dockerfile`, so the rebuild re-clones automatically — no `--no-cache` needed.
-
-#### Routine image rebuild
-
-After pulling upstream changes, rebuild to pick up updates:
-
-```bash
-git pull
-docker build -t watchtowr-mcp .
-```
-
-Docker caches the SDK clone layer, so a plain rebuild keeps the old SDK. To force a fresh SDK clone, add `--no-cache`:
-
-```bash
-docker build --no-cache -t watchtowr-mcp .
 ```
 
 #### stdio — for MCP clients
