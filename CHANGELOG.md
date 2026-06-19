@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ## Table of Contents
 
 - [0.1.2](#012-unreleased)
+  - [Changed: Submodule URL](#changed)
   - [Fixed: SDK Compatibility Layer](#fixed-sdk-compatibility-layer-watchtowr_mcp_serversdk_compatpy)
 - [0.1.1](#011)
   - [Fixed: Severity Normalisation](#fixed-severity-normalisation)
@@ -16,6 +17,13 @@ All notable changes to this project will be documented in this file.
 ---
 
 ## [0.1.2]
+
+### Changed
+
+- **Submodule URL** — `watchtowr-api-sdk` now points to
+  `https://github.com/watchtowr/watchtowr-api-sdk-python.git`. Existing clones must
+  follow the migration steps in `README.md` (submodule sync → deinit → remove cached
+  module → re-init → `uv sync`).
 
 ### Fixed: SDK Compatibility Layer (`watchtowr_mcp_server/sdk_compat.py`)
 

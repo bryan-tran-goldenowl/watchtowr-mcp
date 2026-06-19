@@ -4,11 +4,10 @@ LABEL org.opencontainers.image.source="https://github.com/watchtowr/watchtowr-mc
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends git \
-    && rm -rf /var/lib/apt/lists/*
-
 COPY pyproject.toml uv.lock ./
-RUN git clone https://github.com/watchtowr/watchtowr-api-sdk-python.git watchtowr-api-sdk
+# Use the watchtowr-api-sdk submodule checked out on the host (pinned commit),
+# instead of cloning the SDK's latest main, so the image matches the repo's pin.
+COPY watchtowr-api-sdk/ watchtowr-api-sdk/
 RUN uv sync && uv pip install -e watchtowr-api-sdk
 
 COPY watchtowr_mcp_server/ watchtowr_mcp_server/
