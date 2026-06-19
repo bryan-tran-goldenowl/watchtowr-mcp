@@ -1,44 +1,46 @@
 from datetime import datetime, timedelta
 
-from watchtowr_api.api.findings_api import FindingsApi
-from watchtowr_api.api.hunts_api import HuntsApi
-from watchtowr_api.api.business_unit_api import BusinessUnitApi
-from watchtowr_api.api.certificates_api import CertificatesApi
-from watchtowr_api.api.service_listing_api import ServiceListingApi
-from watchtowr_api.api.asset_ip_addresses_api import AssetIPAddressesApi
-from watchtowr_api.api.asset_domains_api import AssetDomainsApi
-from watchtowr_api.api.asset_subdomains_api import AssetSubdomainsApi
-from watchtowr_api.api.asset_ports_api import AssetPortsApi
-from watchtowr_api.api.asset_ip_ranges_api import AssetIPRangesApi
-from watchtowr_api.api.asset_cloud_storage_assets_api import AssetCloudStorageAssetsApi
-from watchtowr_api.api.asset_source_code_repositories_api import AssetSourceCodeRepositoriesApi
-from watchtowr_api.api.asset_containers_api import AssetContainersApi
-from watchtowr_api.api.asset_saa_s_platforms_api import AssetSaaSPlatformsApi
-from watchtowr_api.api.asset_mobile_applications_api import AssetMobileApplicationsApi
-from watchtowr_api.api.points_of_interest_api import PointsOfInterestApi
+from watchtowr_api_sdk.api.findings_api import FindingsApi
+from watchtowr_api_sdk.api.hunts_api import HuntsApi
+from watchtowr_api_sdk.api.business_unit_api import BusinessUnitApi
+from watchtowr_api_sdk.api.certificates_api import CertificatesApi
+from watchtowr_api_sdk.api.service_discovery_api import ServiceDiscoveryApi
+from watchtowr_api_sdk.api.ip_addresses_api import IPAddressesApi
+from watchtowr_api_sdk.api.domains_api import DomainsApi
+from watchtowr_api_sdk.api.subdomains_api import SubdomainsApi
+from watchtowr_api_sdk.api.ports_api import PortsApi
+from watchtowr_api_sdk.api.ip_ranges_api import IPRangesApi
+from watchtowr_api_sdk.api.cloud_storage_api import CloudStorageApi
+from watchtowr_api_sdk.api.repositories_api import RepositoriesApi
+from watchtowr_api_sdk.api.containers_api import ContainersApi
+from watchtowr_api_sdk.api.saa_s_platforms_api import SaaSPlatformsApi
+from watchtowr_api_sdk.api.mobile_applications_api import MobileApplicationsApi
+from watchtowr_api_sdk.api.points_of_interest_api import PointsOfInterestApi
 
-from ..client import get_api_client, get_total, parse_date, format_bus, severity_display
+from ..client import get_api_client, get_total, parse_date, format_bus, severity_display, supported_kwargs
 from ..constants import SUMMARY_SEVERITIES
 
 
 _ASSET_API_MAP = [
-    ("IP Addresses", AssetIPAddressesApi, "get_list_asset_ips"),
-    ("Domains", AssetDomainsApi, "get_list_asset_domains"),
-    ("Subdomains", AssetSubdomainsApi, "get_list_asset_subdomains"),
-    ("Ports", AssetPortsApi, "get_list_asset_ports"),
-    ("IP Ranges", AssetIPRangesApi, "get_list_asset_ipranges"),
-    ("Cloud Storage", AssetCloudStorageAssetsApi, "get_list_asset_cloud_storages"),
-    ("Repositories", AssetSourceCodeRepositoriesApi, "get_list_asset_repositories"),
-    ("Containers", AssetContainersApi, "get_list_asset_container"),
-    ("SaaS Platforms", AssetSaaSPlatformsApi, "get_list_asset_saas_platforms"),
-    ("Mobile Apps", AssetMobileApplicationsApi, "get_list_asset_mobile_apps"),
+    ("IP Addresses", IPAddressesApi, "get_list_asset_ips"),
+    ("Domains", DomainsApi, "get_list_asset_domains"),
+    ("Subdomains", SubdomainsApi, "get_list_asset_subdomains"),
+    ("Ports", PortsApi, "get_list_asset_ports"),
+    ("IP Ranges", IPRangesApi, "get_list_asset_ipranges"),
+    ("Cloud Storage", CloudStorageApi, "get_list_asset_cloud_storages"),
+    ("Repositories", RepositoriesApi, "get_list_asset_repositories"),
+    ("Containers", ContainersApi, "get_list_asset_container"),
+    ("SaaS Platforms", SaaSPlatformsApi, "get_list_asset_saas_platforms"),
+    ("Mobile Apps", MobileApplicationsApi, "get_list_asset_mobile_apps"),
 ]
 
 
 def _count(api_instance, method_name, **kwargs):
     """Call a list method with page_size=1 and extract the total count."""
     method = getattr(api_instance, method_name)
-    response = method(page_size=1, **kwargs)
+    kwargs.pop("page_size", None)
+    safe = supported_kwargs(method, kwargs)
+    response = method(page_size=1, **safe)
     return get_total(response) or (len(response.data) if hasattr(response, 'data') and response.data else 0)
 
 
@@ -104,7 +106,9 @@ def register_composite_tools(mcp):
                 try:
                     api = api_cls(client)
                     method = getattr(api, method_name)
-                    response = method(created_from=since, page_size=30)
+                    response = method(**supported_kwargs(
+                        method, {"created_from": since, "page_size": 30}
+                    ))
 
                     count = get_total(response) or (
                         len(response.data) if hasattr(response, 'data') and response.data else 0
@@ -222,7 +226,7 @@ def register_composite_tools(mcp):
                         findings_api, "get_list_findings",
                         severities=severity,
                         business_unit_ids=business_unit_id,
-                        statuses="Open,Triaged,In Progress",
+                        statuses="confirmed",
                     )
                     total_findings += count
                     lines.append(f"  • {severity_display(severity)}: {count}")
@@ -250,7 +254,7 @@ def register_composite_tools(mcp):
 
             # Services
             try:
-                svc_api = ServiceListingApi(client)
+                svc_api = ServiceDiscoveryApi(client)
                 svc_count = _count(
                     svc_api, "get_list_service_listing",
                     business_unit_ids=business_unit_id,
@@ -298,7 +302,7 @@ def register_composite_tools(mcp):
         try:
             client = get_api_client()
             findings_api = FindingsApi(client)
-            response = findings_api.get_finding_details(id=finding_id, api_token="")
+            response = findings_api.get_finding_details(id=finding_id)
 
             f = response.data if hasattr(response, 'data') else response
             if not f:
@@ -309,40 +313,39 @@ def register_composite_tools(mcp):
                 f"Title: {getattr(f, 'title', 'N/A')}",
                 f"Severity: {severity_display(getattr(f, 'severity', None))}",
                 f"Status: {getattr(f, 'status', 'N/A')}",
-                f"Category: {getattr(f, 'category', 'N/A')}",
                 f"Created: {getattr(f, 'created_at', 'N/A')}",
-                f"Updated: {getattr(f, 'updated_at', 'N/A')}",
             ]
-            bus = format_bus(getattr(f, 'business_units', []))
-            if bus:
-                lines.append(f"Business Units:{bus}")
+            finding_impact = getattr(f, 'finding_impact', None)
+            if finding_impact:
+                lines.append(f"Finding Impact: {finding_impact}")
 
             description = getattr(f, 'description', '')
             if description:
                 lines.append(f"\nDescription:\n{description}")
 
-            remediation = getattr(f, 'remediation', '')
-            if remediation:
-                lines.append(f"\nRemediation:\n{remediation}")
+            recommendation = getattr(f, 'recommendation', '')
+            if recommendation:
+                lines.append(f"\nRecommendation:\n{recommendation}")
 
-            # Try to extract asset context
-            asset = getattr(f, 'asset', None)
-            if asset:
+            # Try to extract asset context. ClientFinding exposes the related
+            # asset under `affected` shaped as {"data": {type, name, id, ...}}.
+            affected = getattr(f, 'affected', None)
+            data = None
+            if isinstance(affected, dict):
+                data = affected.get('data')
+            elif affected is not None:
+                data = getattr(affected, 'data', None)
+
+            if isinstance(data, dict) and (data.get('id') or data.get('name') or data.get('type')):
                 lines.append("\n--- Associated Asset ---")
-                if isinstance(asset, dict):
-                    asset_id = asset.get('id')
-                    asset_type = asset.get('type', '')
-                    asset_name = asset.get('name', '') or asset.get('url', '') or asset.get('iprange', '')
-                else:
-                    asset_id = getattr(asset, 'id', None)
-                    asset_type = getattr(asset, 'type', '')
-                    asset_name = getattr(asset, 'name', '') or getattr(asset, 'url', '') or getattr(asset, 'iprange', '')
-
+                asset_type = data.get('type', '')
+                asset_name = data.get('name') or data.get('url') or data.get('iprange') or ''
+                asset_id = data.get('id')
                 lines.append(f"Asset Type: {asset_type}")
                 lines.append(f"Asset Name: {asset_name}")
                 lines.append(f"Asset ID: {asset_id}")
 
-                if asset_id:
+                if asset_id and asset_type:
                     try:
                         detail_lines = _fetch_asset_detail(client, asset_type, asset_id)
                         if detail_lines:
@@ -364,11 +367,13 @@ def register_composite_tools(mcp):
         try:
             client = get_api_client()
             cert_api = CertificatesApi(client)
-            svc_api = ServiceListingApi(client)
+            svc_api = ServiceDiscoveryApi(client)
 
-            expiry_cutoff = datetime.now() + timedelta(days=days)
+            now = datetime.now()
+            expiry_cutoff = now + timedelta(days=days)
             cert_response = cert_api.get_list_certificates(
-                valid_to_before=expiry_cutoff,
+                not_after_from=now,
+                not_after_to=expiry_cutoff,
                 page_size=30,
             )
 
@@ -378,25 +383,34 @@ def register_composite_tools(mcp):
             cert_total = get_total(cert_response)
             lines = [f"Certificates Expiring Within {days} Days ({cert_total or len(cert_response.data)}):", ""]
 
-            # Collect hostnames from certs for service cross-reference
+            # Collect hostnames from certs for service cross-reference.
+            # The list item is ServiceInformationResponse: cert fields are nested
+            # under .certificate, the owning asset under .asset.
             cert_hosts = set()
-            for cert in cert_response.data:
-                cn = getattr(cert, 'common_name', '') or ''
-                subject = getattr(cert, 'subject', '') or ''
-                valid_to = getattr(cert, 'valid_to', 'N/A')
-                issuer = getattr(cert, 'issuer', '')
-                bus = format_bus(getattr(cert, 'business_units', []))
+            for item in cert_response.data:
+                cert = getattr(item, 'certificate', None)
+                asset = getattr(item, 'asset', None)
+                cn = (getattr(cert, 'subject_common_name', '') if cert else '') or ''
+                issuer = (getattr(cert, 'issuer_organisation', '') if cert else '') or ''
+                asset_name = (getattr(asset, 'name', '') if asset else '') or ''
+                bus = format_bus(getattr(asset, 'business_units', []) if asset else [])
+                cert_status = (getattr(cert, 'status', '') if cert else '') or ''
 
-                lines.append(f"• {cn or subject}")
-                lines.append(f"  Expires: {valid_to}")
+                lines.append(f"• {cn or asset_name or 'Unknown'}")
+                if cert_status:
+                    lines.append(f"  Status: {cert_status}")
                 if issuer:
                     lines.append(f"  Issuer: {issuer}")
+                if asset_name:
+                    lines.append(f"  Asset: {asset_name}")
                 if bus:
                     lines.append(f"  {bus}")
                 lines.append("")
 
                 if cn:
                     cert_hosts.add(cn.lstrip("*."))
+                if asset_name:
+                    cert_hosts.add(asset_name.lstrip("*."))
 
             # Cross-reference with services
             if cert_hosts:
@@ -406,12 +420,19 @@ def register_composite_tools(mcp):
                     if hasattr(svc_response, 'data') and svc_response.data:
                         matched = []
                         for svc in svc_response.data:
-                            svc_name = getattr(svc, 'name', '') or ''
-                            svc_host = getattr(svc, 'host', '') or ''
-                            if any(h in svc_name or h in svc_host for h in cert_hosts):
-                                tech = getattr(svc, 'technology', '')
+                            svc_host = getattr(svc, 'hostname', '') or ''
+                            svc_ip = getattr(svc, 'ip', '') or ''
+                            haystack = f"{svc_host} {svc_ip}"
+                            if any(h and h in haystack for h in cert_hosts):
+                                service = getattr(svc, 'service', '') or ''
                                 port = getattr(svc, 'port', '')
-                                matched.append(f"• {svc_host}:{port} ({tech}) - {svc_name}")
+                                techs = getattr(svc, 'technologies', []) or []
+                                tech_names = [
+                                    getattr(t, 'display_name', getattr(t, 'name', '')) for t in techs
+                                ]
+                                tech_str = f" [{', '.join(tn for tn in tech_names if tn)}]" if tech_names else ""
+                                label_host = svc_host or svc_ip
+                                matched.append(f"• {label_host}:{port} ({service}){tech_str}")
                         if matched:
                             lines.extend(matched)
                         else:
@@ -477,20 +498,22 @@ def register_composite_tools(mcp):
 
                 # Attempt to get full detail with remediation
                 try:
-                    detail_resp = findings_api.get_finding_details(id=fid, api_token="")
+                    detail_resp = findings_api.get_finding_details(id=fid)
                     fd = detail_resp.data if hasattr(detail_resp, 'data') else detail_resp
                     if fd:
-                        remediation = getattr(fd, 'remediation', '')
-                        asset = getattr(fd, 'asset', None)
-                        if asset:
-                            if isinstance(asset, dict):
-                                asset_name = asset.get('name', '') or asset.get('url', '')
-                            else:
-                                asset_name = getattr(asset, 'name', '') or getattr(asset, 'url', '')
+                        recommendation = getattr(fd, 'recommendation', '')
+                        affected = getattr(fd, 'affected', None)
+                        data = None
+                        if isinstance(affected, dict):
+                            data = affected.get('data')
+                        elif affected is not None:
+                            data = getattr(affected, 'data', None)
+                        if isinstance(data, dict):
+                            asset_name = data.get('name') or data.get('url') or data.get('iprange') or ''
                             if asset_name:
                                 lines.append(f"   Asset: {asset_name}")
-                        if remediation:
-                            rem_preview = remediation[:200].replace('\n', ' ')
+                        if recommendation:
+                            rem_preview = recommendation[:200].replace('\n', ' ')
                             lines.append(f"   Remediation: {rem_preview}")
                 except Exception:
                     pass
@@ -580,7 +603,7 @@ def register_composite_tools(mcp):
             detail_lines = _fetch_asset_detail(client, asset_type, asset_id)
             asset_name = None
             for line in detail_lines:
-                if "Name:" in line or "Iprange:" in line:
+                if "Name:" in line or "Iprange:" in line or "Url:" in line or "Ip:" in line:
                     asset_name = line.split(":", 1)[1].strip()
                     break
 
@@ -622,7 +645,7 @@ def register_composite_tools(mcp):
             cutoff = datetime.now() - timedelta(days=days)
 
             resp = findings_api.get_list_findings(
-                statuses="Open,Triaged,In Progress",
+                statuses="confirmed",
                 created_to=cutoff,
                 page_size=min(page_size, 30),
             )
@@ -663,7 +686,7 @@ def register_composite_tools(mcp):
             for severity in SUMMARY_SEVERITIES[:2]:  # critical, high
                 resp = findings_api.get_list_findings(
                     severities=severity,
-                    statuses="Open,Triaged,In Progress",
+                    statuses="confirmed",
                     assignee="No Assignee",
                     page_size=min(page_size, 30),
                 )
@@ -693,23 +716,33 @@ def register_composite_tools(mcp):
             client = get_api_client()
             findings_api = FindingsApi(client)
 
-            asset_types = ["domain", "subdomain", "ip_address", "port", "ip_range",
-                           "cloud_storage", "repository", "container", "saas_platform", "mobile_app"]
+            asset_types = {
+                "domain": "Domain",
+                "subdomain": "Subdomain",
+                "ip": "IP Address",
+                "port": "Port",
+                "ipRange": "IP Range",
+                "cloudStorage": "Cloud Storage",
+                "repository": "Repository",
+                "container": "Container",
+                "saasPlatform": "SaaS Platform",
+                "mobileApp": "Mobile App"
+            }
 
             lines = ["Unresolved Findings by Asset Type:", ""]
             total = 0
-            for at in asset_types:
+            for at, label in asset_types.items():
                 try:
                     count = _count(
                         findings_api, "get_list_findings",
                         asset_types=at,
-                        statuses="Open,Triaged,In Progress",
+                        statuses="confirmed",
                     )
                     total += count
                     if count > 0:
-                        lines.append(f"  • {at.replace('_', ' ').title()}: {count}")
+                        lines.append(f"  • {label}: {count}")
                 except Exception:
-                    lines.append(f"  • {at.replace('_', ' ').title()}: error")
+                    lines.append(f"  • {label}: error")
 
             lines.insert(1, f"Total: {total}")
             return "\n".join(lines)
@@ -734,7 +767,9 @@ def register_composite_tools(mcp):
                 try:
                     api = api_cls(client)
                     method = getattr(api, method_name)
-                    response = method(created_from=since, page_size=30)
+                    response = method(**supported_kwargs(
+                        method, {"created_from": since, "page_size": 30}
+                    ))
 
                     if hasattr(response, 'data') and response.data:
                         no_bu = []
@@ -765,31 +800,35 @@ def register_composite_tools(mcp):
 
 def _fetch_asset_detail(client, asset_type: str, asset_id) -> list[str]:
     """Fetch detailed info for an asset given its type, returning formatted lines."""
-    type_lower = str(asset_type).lower().replace(" ", "_")
-    lines = []
-
     dispatch = {
-        "ip": (AssetIPAddressesApi, "get_asset_ip_details", ["name", "status", "country", "live", "source"]),
-        "ip_address": (AssetIPAddressesApi, "get_asset_ip_details", ["name", "status", "country", "live", "source"]),
-        "domain": (AssetDomainsApi, "get_asset_domain_details", ["name", "status", "live", "source"]),
-        "subdomain": (AssetSubdomainsApi, "get_asset_subdomain_details", ["name", "status", "live", "source"]),
-        "port": (AssetPortsApi, "get_asset_port_details", ["ip", "port", "service", "banner", "status"]),
-        "ip_range": (AssetIPRangesApi, "get_asset_iprange_details", ["iprange", "asn", "desc", "country", "status"]),
-        "cloud_storage": (AssetCloudStorageAssetsApi, "get_asset_cloud_storage_details", ["name", "platform", "url", "status"]),
-        "repository": (AssetSourceCodeRepositoriesApi, "get_asset_repository_details", ["name", "owner", "provider", "status"]),
-        "container": (AssetContainersApi, "get_asset_container_details", ["name", "owner", "platform", "url", "status"]),
-        "saas_platform": (AssetSaaSPlatformsApi, "get_asset_saas_platform_details", ["url", "provider", "status"]),
-        "mobile_app": (AssetMobileApplicationsApi, "get_asset_mobile_app_details", ["name", "publisher", "platform", "url", "status"]),
+        "ip": (IPAddressesApi, "get_asset_ip_details", ["name", "status", "country", "live", "source"]),
+        "ip_address": (IPAddressesApi, "get_asset_ip_details", ["name", "status", "country", "live", "source"]),
+        "domain": (DomainsApi, "get_asset_domain_details", ["name", "status", "live", "source"]),
+        "subdomain": (SubdomainsApi, "get_asset_subdomain_details", ["name", "status", "live", "source"]),
+        "port": (PortsApi, "get_asset_port_details", ["ip", "port", "service", "banner", "status"]),
+        "ip_range": (IPRangesApi, "get_asset_iprange_details", ["iprange", "asn", "desc", "country", "status"]),
+        "cloud_storage": (CloudStorageApi, "get_asset_cloud_storage_details", ["name", "platform", "url", "status"]),
+        "repository": (RepositoriesApi, "get_asset_repository_details", ["name", "owner", "provider", "status"]),
+        "container": (ContainersApi, "get_asset_container_details", ["name", "owner", "platform", "url", "status"]),
+        "saas_platform": (SaaSPlatformsApi, "get_asset_saas_platform_details", ["url", "provider", "status"]),
+        "mobile_app": (MobileApplicationsApi, "get_asset_mobile_app_details", ["name", "publisher", "platform", "url", "status"]),
     }
 
-    if type_lower not in dispatch:
+    
+    def _normalize(t) -> str:
+        return str(t).lower().replace(" ", "").replace("_", "")
+
+    lookup = {_normalize(k): k for k in dispatch}
+    key = lookup.get(_normalize(asset_type))
+    if key is None:
         return [f"(Unknown asset type: {asset_type})"]
 
-    api_cls, method_name, fields = dispatch[type_lower]
+    lines = []
+    api_cls, method_name, fields = dispatch[key]
     api = api_cls(client)
     method = getattr(api, method_name)
 
-    kwargs = {"id": int(asset_id), "api_token": ""}
+    kwargs = {"id": int(asset_id)}
     response = method(**kwargs)
     data = response.data if hasattr(response, 'data') else response
 

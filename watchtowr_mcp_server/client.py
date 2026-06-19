@@ -1,8 +1,10 @@
+import inspect
 import os
+import typing
 from datetime import datetime
 
-from watchtowr_api.configuration import Configuration
-from watchtowr_api.api_client import ApiClient
+from watchtowr_api_sdk.configuration import Configuration
+from watchtowr_api_sdk.api_client import ApiClient
 
 _api_client = None
 
@@ -107,3 +109,41 @@ def format_bus(business_units) -> str:
         return ""
     names = [getattr(bu, 'name', 'Unknown') for bu in business_units]
     return f" [BU: {', '.join(names)}]"
+
+
+def _expects_list(annotation) -> bool:
+    """True if a parameter annotation ultimately wraps a list type.
+
+    Asset list endpoints type `statuses`/`business_unit_ids` as
+    Optional[List[str]] while the findings/certificates endpoints type the same
+    filters as a comma-separated str. Inspect the annotation so a single helper
+    can target both.
+    """
+    for sub in [annotation, *typing.get_args(annotation)]:
+        if typing.get_origin(sub) in (list, typing.List):
+            return True
+        for arg in typing.get_args(sub):
+            if typing.get_origin(arg) in (list, typing.List):
+                return True
+    return False
+
+
+def supported_kwargs(method, kwargs: dict) -> dict:
+    """Drop kwargs the SDK method doesn't declare and coerce list-typed ones.
+
+    Asset list endpoints share most filters but differ on which they accept
+    (e.g. PortsApi has no `statuses`) and on the type expected (asset endpoints
+    want List[str] for `statuses`/`business_unit_ids`; findings/certs want a
+    comma-separated str). Filtering + coercing here lets a single call site
+    target every endpoint without crashing on the ones that disagree.
+    """
+    params = inspect.signature(method).parameters
+    out = {}
+    for k, v in kwargs.items():
+        if k not in params:
+            continue
+        if isinstance(v, str) and _expects_list(params[k].annotation):
+            out[k] = [part.strip() for part in v.split(",") if part.strip()]
+        else:
+            out[k] = v
+    return out

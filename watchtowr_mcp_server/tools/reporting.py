@@ -1,40 +1,43 @@
 from datetime import datetime, timedelta
 
-from watchtowr_api.api.findings_api import FindingsApi
-from watchtowr_api.api.business_unit_api import BusinessUnitApi
-from watchtowr_api.api.certificates_api import CertificatesApi
-from watchtowr_api.api.service_listing_api import ServiceListingApi
-from watchtowr_api.api.asset_ip_addresses_api import AssetIPAddressesApi
-from watchtowr_api.api.asset_domains_api import AssetDomainsApi
-from watchtowr_api.api.asset_subdomains_api import AssetSubdomainsApi
-from watchtowr_api.api.asset_ports_api import AssetPortsApi
-from watchtowr_api.api.asset_ip_ranges_api import AssetIPRangesApi
-from watchtowr_api.api.asset_cloud_storage_assets_api import AssetCloudStorageAssetsApi
-from watchtowr_api.api.asset_source_code_repositories_api import AssetSourceCodeRepositoriesApi
-from watchtowr_api.api.asset_containers_api import AssetContainersApi
-from watchtowr_api.api.asset_saa_s_platforms_api import AssetSaaSPlatformsApi
-from watchtowr_api.api.asset_mobile_applications_api import AssetMobileApplicationsApi
+from watchtowr_api_sdk.api.findings_api import FindingsApi
+from watchtowr_api_sdk.api.business_unit_api import BusinessUnitApi
+from watchtowr_api_sdk.api.certificates_api import CertificatesApi
+from watchtowr_api_sdk.api.service_discovery_api import ServiceDiscoveryApi
+from watchtowr_api_sdk.api.ip_addresses_api import IPAddressesApi
+from watchtowr_api_sdk.api.domains_api import DomainsApi
+from watchtowr_api_sdk.api.subdomains_api import SubdomainsApi
+from watchtowr_api_sdk.api.ports_api import PortsApi
+from watchtowr_api_sdk.api.ip_ranges_api import IPRangesApi
+from watchtowr_api_sdk.api.cloud_storage_api import CloudStorageApi
+from watchtowr_api_sdk.api.repositories_api import RepositoriesApi
+from watchtowr_api_sdk.api.containers_api import ContainersApi
+from watchtowr_api_sdk.api.saa_s_platforms_api import SaaSPlatformsApi
+from watchtowr_api_sdk.api.mobile_applications_api import MobileApplicationsApi
+from watchtowr_api_sdk.api.security_posture_dashboard_api import SecurityPostureDashboardApi
 
-from ..client import get_api_client, get_total, parse_date, severity_display
+from ..client import get_api_client, get_total, parse_date, severity_display, supported_kwargs
 from ..constants import SUMMARY_SEVERITIES
 
 _ASSET_API_MAP = [
-    ("IP Addresses", AssetIPAddressesApi, "get_list_asset_ips"),
-    ("Domains", AssetDomainsApi, "get_list_asset_domains"),
-    ("Subdomains", AssetSubdomainsApi, "get_list_asset_subdomains"),
-    ("Ports", AssetPortsApi, "get_list_asset_ports"),
-    ("IP Ranges", AssetIPRangesApi, "get_list_asset_ipranges"),
-    ("Cloud Storage", AssetCloudStorageAssetsApi, "get_list_asset_cloud_storages"),
-    ("Repositories", AssetSourceCodeRepositoriesApi, "get_list_asset_repositories"),
-    ("Containers", AssetContainersApi, "get_list_asset_container"),
-    ("SaaS Platforms", AssetSaaSPlatformsApi, "get_list_asset_saas_platforms"),
-    ("Mobile Apps", AssetMobileApplicationsApi, "get_list_asset_mobile_apps"),
+    ("IP Addresses", IPAddressesApi, "get_list_asset_ips"),
+    ("Domains", DomainsApi, "get_list_asset_domains"),
+    ("Subdomains", SubdomainsApi, "get_list_asset_subdomains"),
+    ("Ports", PortsApi, "get_list_asset_ports"),
+    ("IP Ranges", IPRangesApi, "get_list_asset_ipranges"),
+    ("Cloud Storage", CloudStorageApi, "get_list_asset_cloud_storages"),
+    ("Repositories", RepositoriesApi, "get_list_asset_repositories"),
+    ("Containers", ContainersApi, "get_list_asset_container"),
+    ("SaaS Platforms", SaaSPlatformsApi, "get_list_asset_saas_platforms"),
+    ("Mobile Apps", MobileApplicationsApi, "get_list_asset_mobile_apps"),
 ]
 
 
 def _count(api_instance, method_name, **kwargs):
     method = getattr(api_instance, method_name)
-    response = method(page_size=1, **kwargs)
+    kwargs.pop("page_size", None)
+    safe = supported_kwargs(method, kwargs)
+    response = method(page_size=1, **safe)
     return get_total(response) or (len(response.data) if hasattr(response, 'data') and response.data else 0)
 
 
@@ -69,7 +72,9 @@ def register_reporting_tools(mcp):
                 try:
                     api = api_cls(client)
                     method = getattr(api, method_name)
-                    response = method(business_unit_ids=business_unit_id, page_size=5)
+                    response = method(**supported_kwargs(
+                        method, {"business_unit_ids": business_unit_id, "page_size": 5}
+                    ))
                     count = get_total(response) or (len(response.data) if hasattr(response, 'data') and response.data else 0)
 
                     if count > 0:
@@ -104,7 +109,9 @@ def register_reporting_tools(mcp):
                 try:
                     api = api_cls(client)
                     method = getattr(api, method_name)
-                    response = method(statuses="VerifiedOutOfScope,Incorrect Identification", page_size=10)
+                    response = method(**supported_kwargs(
+                        method, {"statuses": "verifiedOutOfScope,incorrect identification", "page_size": 10}
+                    ))
                     count = get_total(response) or (len(response.data) if hasattr(response, 'data') and response.data else 0)
 
                     if count > 0:
@@ -144,7 +151,6 @@ def register_reporting_tools(mcp):
                     api = api_cls(client)
                     all_count = _count(api, method_name)
                     verified_count = _count(api, method_name, statuses="verified")
-                    unverified = all_count - verified_count
 
                     total_all += all_count
                     total_verified += verified_count
@@ -178,7 +184,7 @@ def register_reporting_tools(mcp):
             lines = ["Finding Age Distribution (Open/Unresolved):", ""]
 
             for label, created_from, created_to in buckets:
-                kwargs = {"statuses": "Open,Triaged,In Progress", "page_size": 1}
+                kwargs = {"statuses": "confirmed", "page_size": 1}
                 if created_from and not created_to:
                     kwargs["created_from"] = created_from
                 elif created_to and not created_from:
@@ -188,16 +194,16 @@ def register_reporting_tools(mcp):
                     kwargs["created_to"] = created_to
 
                 try:
-                    count = _count(findings_api, "get_list_findings", **{k: v for k, v in kwargs.items() if k != "page_size"})
+                    count = _count(findings_api, "get_list_findings", **kwargs)
                 except Exception:
                     count = "error"
 
                 severity_breakdown = []
                 for sev in SUMMARY_SEVERITIES:
                     try:
-                        sev_kwargs = {**kwargs, "severities": sev}
-                        sev_kwargs.pop("page_size", None)
-                        sev_count = _count(findings_api, "get_list_findings", **sev_kwargs)
+                        sev_count = _count(
+                            findings_api, "get_list_findings", **{**kwargs, "severities": sev}
+                        )
                         if sev_count > 0:
                             severity_breakdown.append(f"{sev[0].upper()}:{sev_count}")
                     except Exception:
@@ -240,7 +246,7 @@ def register_reporting_tools(mcp):
                 try:
                     remediated_count = _count(
                         findings_api, "get_list_findings",
-                        statuses="Remediated",
+                        statuses="remediated",
                         created_from=week_start, created_to=week_end,
                     )
                 except Exception:
@@ -264,7 +270,7 @@ def register_reporting_tools(mcp):
         """
         try:
             client = get_api_client()
-            svc_api = ServiceListingApi(client)
+            svc_api = ServiceDiscoveryApi(client)
 
             resp = svc_api.get_list_service_listing(page_size=min(page_size, 30))
             total = get_total(resp)
@@ -316,7 +322,7 @@ def register_reporting_tools(mcp):
                     total_findings = _count(
                         findings_api, "get_list_findings",
                         asset_types=at,
-                        statuses="Open,Triaged,In Progress",
+                        statuses="confirmed",
                     )
 
                     matching_asset_api = None
@@ -411,7 +417,7 @@ def register_reporting_tools(mcp):
             total_findings = 0
             for sev in SUMMARY_SEVERITIES:
                 try:
-                    c = _count(findings_api, "get_list_findings", severities=sev, statuses="Open,Triaged,In Progress")
+                    c = _count(findings_api, "get_list_findings", severities=sev, statuses="confirmed")
                     total_findings += c
                     lines.append(f"  • {severity_display(sev)}: {c}")
                 except Exception:
@@ -419,13 +425,13 @@ def register_reporting_tools(mcp):
             lines.append(f"  Total Open: {total_findings}")
 
             try:
-                kev = _count(findings_api, "get_list_findings", tags="CISA-KEV", statuses="Open,Triaged,In Progress")
+                kev = _count(findings_api, "get_list_findings", tags="CISA-KEV", statuses="confirmed")
                 lines.append(f"\nCISA-KEV (Open): {kev}")
             except Exception:
                 pass
 
             try:
-                resp = findings_api.get_list_findings(statuses="Open,Triaged,In Progress", page_size=30)
+                resp = findings_api.get_list_findings(statuses="confirmed", page_size=30)
                 if hasattr(resp, 'data') and resp.data:
                     ages = []
                     for f in resp.data:
@@ -498,6 +504,81 @@ def register_reporting_tools(mcp):
             return f"Error generating week-over-week delta: {e}"
 
     @mcp.tool()
+    def get_security_posture() -> str:
+        """Get the security posture dashboard — overall score, coverage metrics, and trends.
+
+        Returns a summary of monitored assets, active hunts, open findings by severity,
+        and recent trends (new findings, resolved, mean time to resolve).
+        """
+        try:
+            api = SecurityPostureDashboardApi(get_api_client())
+            response = api.get_security_posture_dashboard()
+
+            data = response.data if hasattr(response, "data") else response
+            if not data:
+                return "Security posture data not available."
+
+            lines = ["Security Posture Dashboard:"]
+            lines.append("")
+
+            score = getattr(data, "score", None) or getattr(data, "overall_score", None)
+            if score is not None:
+                lines.append(f"Overall Score: {score}")
+                lines.append("")
+
+            lines.append("Coverage:")
+            assets = getattr(data, "total_assets", None) or getattr(data, "assets_monitored", None)
+            if assets is not None:
+                lines.append(f"  Assets Monitored: {assets}")
+
+            hunts = getattr(data, "active_hunts", None) or getattr(data, "total_hunts", None)
+            if hunts is not None:
+                lines.append(f"  Active Hunts: {hunts}")
+
+            findings = getattr(data, "findings", None) or getattr(data, "open_findings", None)
+            if findings is not None:
+                if isinstance(findings, dict):
+                    total_f = findings.get("total", 0)
+                    critical = findings.get("critical", 0)
+                    high = findings.get("high", 0)
+                    lines.append(f"  Open Findings: {total_f} ({critical} Critical, {high} High)")
+                else:
+                    lines.append(f"  Open Findings: {findings}")
+
+            trends = getattr(data, "trends", None)
+            if trends:
+                lines.append("")
+                lines.append("Trends (30d):")
+                new_f = getattr(trends, "new_findings", None)
+                resolved = getattr(trends, "resolved", None)
+                mttr = getattr(trends, "mean_time_to_resolve", None)
+                if new_f is not None:
+                    lines.append(f"  New Findings: {new_f}")
+                if resolved is not None:
+                    lines.append(f"  Resolved: {resolved}")
+                if mttr is not None:
+                    lines.append(f"  Mean Time to Resolve: {mttr}")
+
+            # Fallback: if we matched nothing useful, dump all non-None attributes
+            if len(lines) <= 3:
+                lines.append("")
+                for attr in dir(data):
+                    if not attr.startswith("_") and attr not in (
+                        "to_dict",
+                        "to_str",
+                        "attribute_map",
+                        "model_fields",
+                        "model_config",
+                    ):
+                        val = getattr(data, attr, None)
+                        if val is not None and not callable(val):
+                            lines.append(f"  {attr}: {val}")
+
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Error: {str(e)}"
+
+    @mcp.tool()
     def get_top_findings_by_occurrence(page_size: int = 30) -> str:
         """Most frequently occurring finding titles across the attack surface — reveals systemic issues.
 
@@ -509,7 +590,7 @@ def register_reporting_tools(mcp):
             findings_api = FindingsApi(client)
 
             resp = findings_api.get_list_findings(
-                statuses="Open,Triaged,In Progress",
+                statuses="confirmed",
                 page_size=min(page_size, 30),
             )
 

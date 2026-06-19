@@ -8,6 +8,7 @@ from .composite import register_composite_tools
 from .reporting import register_reporting_tools
 from .incident import register_incident_tools
 from .workflow import register_workflow_tools
+from .intelligence import register_intelligence_tools
 
 
 def register_all_tools(mcp):
@@ -21,3 +22,4 @@ def register_all_tools(mcp):
     register_reporting_tools(mcp)
     register_incident_tools(mcp)
     register_workflow_tools(mcp)
+    register_intelligence_tools(mcp)

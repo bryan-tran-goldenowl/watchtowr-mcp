@@ -76,13 +76,13 @@ class FindingRetestResponseDtoCompat(BaseModel):
 
 
 def apply_watchtowr_sdk_compat_patches() -> None:
-    import watchtowr_api.models.finding_retest_response_dto as dto_mod
-    import watchtowr_api.models.client_finding as cf_mod
-    import watchtowr_api.models.paginated_client_findings as pcf_mod
-    import watchtowr_api.models.retest as retest_mod
-    import watchtowr_api.models.link as link_mod
-    from watchtowr_api.models.client_finding_assignee import ClientFindingAssignee
-    from watchtowr_api.models.client_finding_impact_tag import ClientFindingImpactTag
+    import watchtowr_api_sdk.models.finding_retest_response_dto as dto_mod
+    import watchtowr_api_sdk.models.client_finding as cf_mod
+    import watchtowr_api_sdk.models.paginated_client_findings as pcf_mod
+    import watchtowr_api_sdk.models.retest as retest_mod
+    import watchtowr_api_sdk.models.link as link_mod
+    from watchtowr_api_sdk.models.client_finding_assignee import ClientFindingAssignee
+    from watchtowr_api_sdk.models.client_finding_impact_tag import ClientFindingImpactTag
 
     # Patch Link: previous/next are null on the first/last page respectively.
     def link_from_dict(cls, obj: Optional[Dict[str, Any]]) -> Any:
@@ -126,7 +126,7 @@ def apply_watchtowr_sdk_compat_patches() -> None:
             return None
         if not isinstance(obj, dict):
             return obj
-        fr = obj.get("finding_retests")
+        fr = obj.get("retest_history")
         # Use model_construct to bypass Pydantic's cached field validators.
         # Some generated SDK fields (e.g. created_at) are typed in a way that
         # rejects the raw API values at validation time even after model_rebuild.
@@ -155,10 +155,18 @@ def apply_watchtowr_sdk_compat_patches() -> None:
             retest=retest_mod.Retest.from_dict(obj["retest"])
             if obj.get("retest") is not None
             else None,
-            finding_retests=fr if fr is not None else [],
+            retest_history=fr if fr is not None else [],
             assigned_user=ClientFindingAssignee.from_dict(obj["assigned_user"])
             if obj.get("assigned_user") is not None
             else None,
+            state=obj.get("state"),
+            last_seen=obj.get("last_seen"),
+            age=obj.get("age"),
+            criticality=obj.get("criticality"),
+            detection_rules=obj.get("detection_rules"),
+            custom_properties=obj.get("customProperties") or obj.get("custom_properties") or [],
+            last_status_updated_at=obj.get("last_status_updated_at"),
+            references=obj.get("references"),
         )
 
     cf_mod.ClientFinding.from_dict = classmethod(client_finding_from_dict)  # type: ignore[assignment]
@@ -166,7 +174,9 @@ def apply_watchtowr_sdk_compat_patches() -> None:
     retest_mod.Retest.model_rebuild(force=True)
     cf_mod.ClientFinding.model_rebuild(force=True)
     pcf_mod.PaginatedClientFindings.model_rebuild(force=True)
+    
 
-    import watchtowr_api.models as models_pkg
+    import watchtowr_api_sdk.models as models_pkg
 
     models_pkg.FindingRetestResponseDto = dto_mod.FindingRetestResponseDto
+

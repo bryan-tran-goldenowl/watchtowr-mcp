@@ -1,8 +1,93 @@
-from watchtowr_api.api.findings_api import FindingsApi
-from watchtowr_api.models.update_client_finding_status_request_body import UpdateClientFindingStatusRequestBody
+from watchtowr_api_sdk.api.findings_api import FindingsApi
+from watchtowr_api_sdk.models.update_client_finding_status_request_body import UpdateClientFindingStatusRequestBody
 
 from ..client import get_api_client, get_total, normalize_severities, parse_date, severity_display
 from ..constants import SUMMARY_SEVERITIES
+
+
+def _affected_summary(finding) -> str | None:
+    """Extract a one-line summary of the asset a finding affects.
+
+    The SDK exposes `affected` as a dict shaped like {"data": {type, name, id,
+    status, ...}}. Return None when no usable asset info is present.
+    """
+    affected = getattr(finding, 'affected', None)
+    if not affected:
+        return None
+    data = affected.get('data') if isinstance(affected, dict) else getattr(affected, 'data', None)
+    if not isinstance(data, dict):
+        return None
+    asset_type = data.get('type') or ''
+    name = data.get('name') or data.get('url') or data.get('iprange') or ''
+    asset_id = data.get('id')
+    status = data.get('status') or ''
+    if not (asset_type or name or asset_id):
+        return None
+    parts = []
+    if name:
+        parts.append(str(name))
+    if asset_type:
+        parts.append(f"[{asset_type}]")
+    if asset_id is not None:
+        parts.append(f"(ID:{asset_id})")
+    if status:
+        parts.append(f"- {status}")
+    return " ".join(parts)
+
+
+def _retest_lines(finding) -> list[str]:
+    """Format retest progress + history into display lines (empty list if none)."""
+    lines: list[str] = []
+    retest = getattr(finding, 'retest', None)
+    if retest:
+        remaining = getattr(retest, 'retest_remaining', None)
+        current = getattr(retest, 'current_retest', None)
+        if remaining is not None:
+            lines.append(f"Retests Remaining: {remaining}")
+        if current:
+            status = getattr(current, 'retest_status', 'N/A')
+            requested_by = getattr(current, 'requested_by', '') or 'Unknown'
+            requested_at = getattr(current, 'requested_at', '')
+            completed_at = getattr(current, 'completed_at', None)
+            line = f"Current Retest: {status} (requested by {requested_by}"
+            if requested_at:
+                line += f" at {requested_at}"
+            line += ")"
+            if completed_at:
+                line += f" — completed {completed_at}"
+            lines.append(line)
+
+    history = getattr(finding, 'retest_history', None)
+    if isinstance(history, list) and history:
+        lines.append(f"Retest History ({len(history)}):")
+        for r in history[:5]:
+            status = getattr(r, 'retest_status', 'N/A')
+            requested_at = getattr(r, 'requested_at', '')
+            requested_by = getattr(r, 'requested_by', '') or 'Unknown'
+            lines.append(f"  • {status} by {requested_by} at {requested_at}")
+        if len(history) > 5:
+            lines.append(f"  ... and {len(history) - 5} more")
+    return lines
+
+
+def _custom_property_lines(finding) -> list[str]:
+    """Format custom properties (key=value) into display lines (empty if none)."""
+    cps = getattr(finding, 'custom_properties', None)
+    if not isinstance(cps, list) or not cps:
+        return []
+    pairs = []
+    for cp in cps:
+        if isinstance(cp, dict):
+            key = cp.get('key')
+            value = cp.get('value')
+        else:
+            key = getattr(cp, 'key', None)
+            value = getattr(cp, 'value', None)
+        if key is not None:
+            pairs.append(f"{key}={value}")
+    if not pairs:
+        return []
+    return [f"Custom Properties: {', '.join(pairs)}"]
 
 
 def register_findings_tools(mcp):
@@ -81,7 +166,7 @@ def register_findings_tools(mcp):
         """
         try:
             api = FindingsApi(get_api_client())
-            response = api.get_finding_details(id=finding_id, api_token="")
+            response = api.get_finding_details(id=finding_id)
 
             finding = response.data if hasattr(response, 'data') else response
             if not finding:
@@ -91,6 +176,38 @@ def register_findings_tools(mcp):
             lines.append(f"Title: {getattr(finding, 'title', 'N/A')}")
             lines.append(f"Severity: {severity_display(getattr(finding, 'severity', None))}")
             lines.append(f"Status: {getattr(finding, 'status', 'N/A')}")
+
+            finding_impact = getattr(finding, 'finding_impact', None)
+            if finding_impact:
+                lines.append(f"Finding Impact: {finding_impact}")
+
+            state = getattr(finding, 'state', None)
+            lines.append(f"State: {state}")
+
+            age = getattr(finding, 'age', None)
+            lines.append(f"Age: {age} days" if age is not None else "Age: None")
+
+            criticality = getattr(finding, 'criticality', None)
+            lines.append(f"Criticality: {criticality}")
+
+            last_seen = getattr(finding, 'last_seen', None)
+            lines.append(f"Last Seen: {last_seen}")
+
+            last_status_updated = getattr(finding, 'last_status_updated_at', None)
+            if last_status_updated:
+                lines.append(f"Last Status Update: {last_status_updated}")
+
+            detection_rules = getattr(finding, 'detection_rules', None)
+            if detection_rules:
+                lines.append(f"\nDetection Rules ({len(detection_rules)}):")
+                for rule in detection_rules[:5]:
+                    title = rule.get('title', 'Unknown') if isinstance(rule, dict) else 'Unknown'
+                    rule_type = rule.get('type', '') if isinstance(rule, dict) else ''
+                    lines.append(f"  • [{rule_type}] {title}")
+
+            affected = _affected_summary(finding)
+            if affected:
+                lines.append(f"Affected Asset: {affected}")
 
             cvss = getattr(finding, 'cvssv3_score', None)
             if cvss is not None:
@@ -123,6 +240,10 @@ def register_findings_tools(mcp):
             if recommendation:
                 lines.append(f"\nRecommendation:\n{recommendation}")
 
+            references = getattr(finding, 'references', None)
+            if references and references != "No references.":
+                lines.append(f"\nReferences:\n{references}")
+
             tags = getattr(finding, 'tags', [])
             if tags:
                 tag_names = [getattr(t, 'name', str(t)) for t in tags]
@@ -131,6 +252,17 @@ def register_findings_tools(mcp):
             assignee = getattr(finding, 'assigned_user', None)
             if assignee:
                 lines.append(f"Assigned to: {getattr(assignee, 'name', 'N/A')}")
+
+            cp_lines = _custom_property_lines(finding)
+            if cp_lines:
+                lines.append("")
+                lines.extend(cp_lines)
+
+            retest_lines = _retest_lines(finding)
+            if retest_lines:
+                lines.append("")
+                lines.append("Retest:")
+                lines.extend(f"  {rl}" for rl in retest_lines)
 
             lines.append(f"Created: {getattr(finding, 'created_at', 'N/A')}")
 
@@ -151,6 +283,8 @@ def register_findings_tools(mcp):
         finding_impact_threshold: str = None,
         created_from: str = None,
         created_to: str = None,
+        only_validated_exploitable: bool = None,
+        exploitation_risk_level: str = None,
         page: int = 1,
         page_size: int = 30,
     ) -> str:
@@ -168,6 +302,8 @@ def register_findings_tools(mcp):
             finding_impact_threshold: Impact setting - "High" for prioritised findings or "All" for broader range.
             created_from: Start date (YYYY-MM-DD).
             created_to: End date (YYYY-MM-DD).
+            only_validated_exploitable: Filter to only show findings validated as exploitable.
+            exploitation_risk_level: Filter by comma-separated risk levels.
             page: Page number (default 1).
             page_size: Results per page (max 30).
         """
@@ -196,6 +332,10 @@ def register_findings_tools(mcp):
                 kwargs["created_from"] = parse_date(created_from)
             if created_to:
                 kwargs["created_to"] = parse_date(created_to)
+            if only_validated_exploitable is not None:
+                kwargs["only_validated_exploitable"] = only_validated_exploitable
+            if exploitation_risk_level:
+                kwargs["exploitation_risk_level"] = exploitation_risk_level
 
             response = api.get_list_findings(**kwargs)
 
@@ -209,7 +349,9 @@ def register_findings_tools(mcp):
                 sev = severity_display(getattr(f, 'severity', None))
                 title = getattr(f, 'title', 'No title')
                 status = getattr(f, 'status', 'Unknown')
-                lines.append(f"• [ID:{fid}] [{sev}] {title} ({status})")
+                affected = _affected_summary(f)
+                affected_str = f" → {affected}" if affected else ""
+                lines.append(f"• [ID:{fid}] [{sev}] {title} ({status}){affected_str}")
 
             header = f"Findings ({len(lines)}"
             if total:
@@ -232,7 +374,7 @@ def register_findings_tools(mcp):
             body = UpdateClientFindingStatusRequestBody(status=status)
             response = api.update_finding_status(
                 id=finding_id,
-                api_token="",
+                
                 update_client_finding_status_request_body=body,
             )
 
@@ -263,32 +405,17 @@ def register_findings_tools(mcp):
     def get_finding_statuses() -> str:
         """List all available finding status values."""
         try:
-            import json
             api = FindingsApi(get_api_client())
-            _data, status_code, headers = api.get_available_finding_statuses_with_http_info()
+            response = api.get_available_finding_statuses()
+            statuses = getattr(response, "data", [])
+            
+            if statuses and isinstance(statuses, list):
+                # Handle nested list [["confirmed", ...]]
+                first = statuses[0]
+                status_list = first if isinstance(first, list) else statuses
+                return "Available Finding Statuses:\n" + "\n".join(f"• {s}" for s in status_list)
 
-            response_data = headers.get("Content-Type", "")
-            if hasattr(_data, 'read'):
-                body = _data.read()
-            elif isinstance(_data, (str, bytes)):
-                body = _data
-            else:
-                body = str(_data)
-
-            if isinstance(body, bytes):
-                body = body.decode("utf-8")
-
-            try:
-                parsed = json.loads(body)
-                if isinstance(parsed, list):
-                    return "Available Finding Statuses:\n" + "\n".join(f"• {s}" for s in parsed)
-                if isinstance(parsed, dict) and "data" in parsed:
-                    statuses = parsed["data"]
-                    if isinstance(statuses, list):
-                        return "Available Finding Statuses:\n" + "\n".join(f"• {s}" for s in statuses)
-                return f"Available Finding Statuses: {parsed}"
-            except (json.JSONDecodeError, TypeError):
-                return f"Available Finding Statuses: {body}"
+            return f"Available Finding Statuses: {statuses}"
         except Exception as e:
             return f"Error retrieving finding statuses: {e}"
 
@@ -330,7 +457,7 @@ def register_findings_tools(mcp):
             api = FindingsApi(get_api_client())
             kwargs = {
                 "business_unit_ids": business_unit_id,
-                "statuses": "Open,Triaged,In Progress",
+                "statuses": "confirmed",
                 "page_size": min(page_size, 30),
             }
             if severities:
@@ -367,7 +494,29 @@ def register_findings_tools(mcp):
         """
         try:
             api = FindingsApi(get_api_client())
-            api.export_pdf_for_finding(id=finding_id, api_token="")
+            api.export_pdf_for_finding(id=finding_id)
             return f"PDF export initiated for finding {finding_id}. Check the watchTowr Platform for the download."
         except Exception as e:
             return f"Error exporting finding PDF: {e}"
+
+    @mcp.tool()
+    def update_finding_state(finding_id: int, state: str) -> str:
+        """Update the handling state of a finding (e.g. Uninvestigated, In Progress, Completed).
+
+        Args:
+            finding_id: The finding ID to update.
+            state: The new state value ('Uninvestigated', 'In Progress', 'Completed').
+        """
+        try:
+            from watchtowr_api_sdk.models.update_client_finding_state_request_body import UpdateClientFindingStateRequestBody
+            api = FindingsApi(get_api_client())
+            body = UpdateClientFindingStateRequestBody(state=state)
+            response = api.update_finding_state(
+                id=finding_id,
+                update_client_finding_state_request_body=body,
+            )
+            finding = response.data if hasattr(response, 'data') else response
+            new_state = getattr(finding, 'state', state) if finding else state
+            return f"Finding {finding_id} state updated to: {new_state}"
+        except Exception as e:
+            return f"Error updating finding state: {e}"

@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 
-from watchtowr_api.api.findings_api import FindingsApi
-from watchtowr_api.api.activity_log_api import ActivityLogApi
-from watchtowr_api.models.update_client_finding_status_request_body import UpdateClientFindingStatusRequestBody
+from watchtowr_api_sdk.api.findings_api import FindingsApi
+from watchtowr_api_sdk.api.activity_log_api import ActivityLogApi
+from watchtowr_api_sdk.models.update_client_finding_status_request_body import UpdateClientFindingStatusRequestBody
 
 from ..client import get_api_client, get_total, parse_date, severity_display
 from ..constants import SUMMARY_SEVERITIES
@@ -25,7 +25,7 @@ def register_workflow_tools(mcp):
             since = datetime.now() - timedelta(days=days)
 
             resp = findings_api.get_list_findings(
-                statuses="Remediated",
+                statuses="remediated",
                 created_from=since,
                 page_size=min(page_size, 30),
             )
@@ -42,7 +42,7 @@ def register_workflow_tools(mcp):
                 fid = getattr(f, 'id', '')
                 sev = severity_display(getattr(f, 'severity', None))
                 title = getattr(f, 'title', 'No title')
-                lines.append(f"• [ID:{fid}] [{sev}] {title}")
+                lines.append(f"- [ID:{fid}] [{sev}] {title}")
 
             return "\n".join(lines)
         except Exception as e:
@@ -70,7 +70,7 @@ def register_workflow_tools(mcp):
 
             lines.append(f"New Findings: {new_findings}")
             for sev, count in findings_by_sev.items():
-                lines.append(f"  • {severity_display(sev)}: +{count}")
+                lines.append(f"  - {severity_display(sev)}: +{count}")
             lines.append("")
 
             new_assets = 0
@@ -80,7 +80,7 @@ def register_workflow_tools(mcp):
                     c = _count(api_cls(client), method_name, created_from=since)
                     if c > 0:
                         new_assets += c
-                        asset_lines.append(f"  • {label}: +{c}")
+                        asset_lines.append(f"  - {label}: +{c}")
                 except Exception:
                     pass
 
@@ -98,14 +98,9 @@ def register_workflow_tools(mcp):
                 if hasattr(log_resp, 'data') and log_resp.data:
                     for log in log_resp.data[:5]:
                         desc = getattr(log, 'description', '')
-                        if isinstance(desc, dict):
-                            import json
-                            desc = json.dumps(desc, default=str)
                         causer = getattr(log, 'caused_by', None)
                         user = getattr(causer, 'name', 'System') if causer else 'System'
-                        if isinstance(user, dict):
-                            user = user.get('name', 'System')
-                        lines.append(f"  • {user}: {desc}")
+                        lines.append(f"  - {user}: {desc}")
             except Exception:
                 lines.append("Activity Logs: error")
 
@@ -132,9 +127,9 @@ def register_workflow_tools(mcp):
             for fid in ids:
                 try:
                     findings_api.start_specific_finding_retest(finding_id=fid)
-                    results.append(f"• Finding {fid}: retest initiated")
+                    results.append(f"- Finding {fid}: retest initiated")
                 except Exception as e:
-                    results.append(f"• Finding {fid}: error - {e}")
+                    results.append(f"- Finding {fid}: error - {e}")
 
             return f"Bulk Retest Results ({len(ids)} findings):\n" + "\n".join(results)
         except Exception as e:
@@ -155,21 +150,25 @@ def register_workflow_tools(mcp):
 
             client = get_api_client()
             findings_api = FindingsApi(client)
-            body = UpdateClientFindingStatusRequestBody(status=status)
+            VALID_STATUSES = {"confirmed", "unconfirmed", "remediated", "risk-accepted", "closed", "asset-no-longer-tracked"}
+            status_lower = status.lower().strip()
+            if status_lower not in VALID_STATUSES:
+                return f"Invalid status '{status}'. Valid: {', '.join(sorted(VALID_STATUSES))}"
+            body = UpdateClientFindingStatusRequestBody(status=status_lower)
 
             results = []
             for fid in ids:
                 try:
                     findings_api.update_finding_status(
                         id=fid,
-                        api_token="",
+                        
                         update_client_finding_status_request_body=body,
                     )
-                    results.append(f"• Finding {fid}: updated to {status}")
+                    results.append(f"- Finding {fid}: updated to {status_lower}")
                 except Exception as e:
-                    results.append(f"• Finding {fid}: error - {e}")
+                    results.append(f"- Finding {fid}: error - {e}")
 
-            return f"Bulk Status Update ({len(ids)} findings → {status}):\n" + "\n".join(results)
+            return f"Bulk Status Update ({len(ids)} findings → {status_lower}):\n" + "\n".join(results)
         except Exception as e:
             return f"Error in bulk status update: {e}"
 
@@ -193,7 +192,7 @@ def register_workflow_tools(mcp):
             for sev in SUMMARY_SEVERITIES:
                 kwargs = {
                     "severities": sev,
-                    "statuses": "Open,Triaged,In Progress",
+                    "statuses": "confirmed",
                     "page_size": min(page_size, 30),
                 }
                 if assignee:
@@ -248,7 +247,7 @@ def register_workflow_tools(mcp):
                 try:
                     resp = findings_api.get_list_findings(
                         severities=sev,
-                        statuses="Open,Triaged,In Progress",
+                        statuses="confirmed",
                         assignee="No Assignee",
                         page_size=min(page_size, 30),
                     )
@@ -262,7 +261,7 @@ def register_workflow_tools(mcp):
                                 fid = getattr(f, 'id', '')
                                 title = getattr(f, 'title', 'No title')
                                 created = getattr(f, 'created_at', '')
-                                lines.append(f"  • [ID:{fid}] {title} (since {created})")
+                                lines.append(f"  - [ID:{fid}] {title} (since {created})")
                             if count > 10:
                                 lines.append(f"  ... and {count - 10} more")
                         lines.append("")

@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta
 
-from watchtowr_api.api.suspicious_domains_api import SuspiciousDomainsApi
-from watchtowr_api.api.points_of_interest_api import PointsOfInterestApi
-from watchtowr_api.api.certificates_api import CertificatesApi
+from watchtowr_api_sdk.api.suspicious_domains_api import SuspiciousDomainsApi
+from watchtowr_api_sdk.api.points_of_interest_api import PointsOfInterestApi
+from watchtowr_api_sdk.api.certificates_api import CertificatesApi
+from watchtowr_api_sdk.api.pending_domains_api import PendingDomainsApi
 
 from ..client import get_api_client, get_total, parse_date, format_bus
 
@@ -44,7 +45,7 @@ def register_threat_intel_tools(mcp):
             if whois_search:
                 kwargs["whois_search"] = whois_search
             if statuses:
-                kwargs["statuses"] = statuses
+                kwargs["statuses"] = [s.strip() for s in statuses.split(",") if s.strip()]
             if created_from:
                 kwargs["created_from"] = parse_date(created_from)
             if created_to:
@@ -101,11 +102,15 @@ def register_threat_intel_tools(mcp):
                 lines.append("\nWHOIS Data:")
                 for w in whois_data:
                     raw = getattr(w, 'raw', None)
-                    data_obj = getattr(w, 'data', None)
-                    if data_obj:
-                        lines.append(f"  {data_obj}")
-                    elif raw:
+                    if raw:
                         lines.append(f"  {raw[:500]}")
+                    else:
+                        data_obj = getattr(w, 'data', None)
+                        if data_obj:
+                            try:
+                                lines.append(f"  {data_obj.to_json()[:500]}")
+                            except Exception:
+                                lines.append(f"  {data_obj}")
 
             return "\n".join(lines)
         except Exception as e:
@@ -142,7 +147,7 @@ def register_threat_intel_tools(mcp):
             if search:
                 kwargs["search"] = search
             if types:
-                kwargs["types"] = types
+                kwargs["types"] = [t.strip() for t in types.split(",") if t.strip()]
             if has_finding is not None:
                 kwargs["has_finding"] = has_finding
             if business_unit_ids:
@@ -166,10 +171,17 @@ def register_threat_intel_tools(mcp):
                 url = getattr(p, 'url', '')
                 asset_name = getattr(p, 'asset_name', '')
                 bus = format_bus(getattr(p, 'business_units', []))
+                
+                finding_id = getattr(p, 'finding_id', None) or getattr(p, 'findingId', None)
+                is_perm_suppress = getattr(p, 'is_permanent_suppression', None) or getattr(p, 'isPermanentSuppression', None)
+                
                 type_str = f" [{poi_type}]" if poi_type else ""
                 asset_str = f" on {asset_name}" if asset_name else ""
                 url_str = f" - {url}" if url else ""
-                lines.append(f"• [ID:{pid}] {name}{type_str}{asset_str}{url_str}{bus}")
+                finding_str = f" (Finding ID: {finding_id})" if finding_id else ""
+                suppress_str = " [Permanently Suppressed]" if is_perm_suppress else ""
+                
+                lines.append(f"• [ID:{pid}] {name}{type_str}{asset_str}{url_str}{bus}{finding_str}{suppress_str}")
 
             header = f"Points of Interest ({len(lines)}"
             if total:
@@ -284,11 +296,18 @@ def register_threat_intel_tools(mcp):
                     f"Issuer CN: {getattr(cert, 'issuer_common_name', 'N/A')}",
                     f"Issuer Org: {getattr(cert, 'issuer_organisation', 'N/A')}",
                     f"Issuer Country: {getattr(cert, 'issuer_country', 'N/A')}",
+                    f"Serial Number: {getattr(cert, 'serial_number', None) or getattr(cert, 'serialNumber', 'N/A')}",
                     f"Fingerprint: {getattr(cert, 'fingerprint', 'N/A')}",
                     f"Public Key: {getattr(cert, 'public_key_info_alg', '')} {getattr(cert, 'public_key_info_size', '')}",
+                    f"Valid From: {getattr(cert, 'not_before', None) or getattr(cert, 'notBefore', 'N/A')}",
+                    f"Valid Until: {getattr(cert, 'not_after', None) or getattr(cert, 'notAfter', 'N/A')}",
+                    f"Last Seen: {getattr(cert, 'last_seen_at', None) or getattr(cert, 'lastSeenAt', 'N/A')}",
                     f"Status: {getattr(cert, 'status', 'N/A')}",
                     f"Created: {getattr(cert, 'created_at', 'N/A')}",
                 ])
+                updated_at = getattr(cert, 'updated_at', None) or getattr(cert, 'updatedAt', None)
+                if updated_at:
+                    lines.append(f"Updated: {updated_at}")
                 sans = getattr(cert, 'subject_alt_names', [])
                 if sans:
                     lines.append(f"SANs ({len(sans)}): {', '.join(sans[:20])}")
@@ -345,3 +364,72 @@ def register_threat_intel_tools(mcp):
             return header + "\n" + "\n".join(lines)
         except Exception as e:
             return f"Error listing expiring certificates: {e}"
+
+    # ── Pending Domains ───────────────────────────────────────────
+
+    @mcp.tool()
+    def search_pending_domains(
+        name: str = None,
+        source: str = None,
+        start_date: str = None,
+        end_date: str = None,
+        sort_by: str = None,
+        sort_order: str = None,
+        page: int = 1,
+        page_size: int = 20,
+    ) -> str:
+        """List pending/unclaimed domains that could be claimed by adversaries.
+
+        These are domains found via DNS analysis (e.g. CNAME to expired domain,
+        NS pointing to unregistered nameserver) that represent takeover risks.
+
+        Args:
+            name: Filter by domain name.
+            source: Filter by discovery source.
+            start_date: Start date filter (YYYY-MM-DD).
+            end_date: End date filter (YYYY-MM-DD).
+            sort_by: Sort field.
+            sort_order: Sort direction (asc/desc).
+            page: Page number.
+            page_size: Results per page (max 30).
+        """
+        try:
+            api = PendingDomainsApi(get_api_client())
+            kwargs = {"page": page, "page_size": min(page_size, 30)}
+            if name:
+                kwargs["name"] = name
+            if source:
+                kwargs["source"] = source
+            if start_date:
+                kwargs["start_date"] = parse_date(start_date)
+            if end_date:
+                kwargs["end_date"] = parse_date(end_date)
+            if sort_by:
+                kwargs["sort_by"] = sort_by
+            if sort_order:
+                kwargs["sort_order"] = sort_order
+
+            response = api.get_list_pending_domains(**kwargs)
+
+            if not hasattr(response, "data") or not response.data:
+                return "No pending domains found."
+
+            total = get_total(response) or 0
+            lines = [f"Pending Domains ({len(response.data)} of {total}):", ""]
+
+            for i, domain in enumerate(response.data, 1):
+                did = getattr(domain, "id", "")
+                dname = getattr(domain, "name", "") or getattr(domain, "domain", "")
+                reason = getattr(domain, "source", "") or getattr(domain, "reason", "")
+                created = getattr(domain, "created_at", "") or getattr(domain, "discovered_at", "")
+
+                lines.append(f"{i}. ID: {did} | {dname}")
+                if reason:
+                    lines.append(f"   Source: {reason}")
+                if created:
+                    lines.append(f"   Discovered: {created}")
+                lines.append("")
+
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Error listing pending domains: {e}"

@@ -4,7 +4,7 @@ A [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server that c
 
 ## Features
 
-- **88 tools** covering the full watchTowr Platform API — assets, findings, hunts, certificates, suspicious domains, and more
+- **113 tools** covering the full watchTowr Platform API — assets, findings, hunts, certificates, suspicious domains, and more
 - **Read and write** — query your attack surface and take action (update statuses, trigger retests, submit seed assets)
 - **Composite intelligence** — built-in tools for attack surface summaries, change detection, executive scorecards, and compliance reporting
 - **Secure** — authenticates via API key with tenant isolation; credentials never leave your environment
@@ -20,17 +20,14 @@ A [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) server that c
 
 ### Local Installation
 
+The `watchtowr-api-sdk` lives in a sibling submodule — clone with `--recurse-submodules` (or run `git submodule update --init --recursive` after a plain clone).
+
 ```bash
-git clone https://github.com/watchtowr/watchtowr-mcp.git
+git clone --recurse-submodules https://github.com/watchtowr/watchtowr-mcp.git
 cd watchtowr-mcp
 
-# Clone the API SDK
-git clone https://github.com/watchtowr/watchtowr-api-sdk.git
-
-# Install dependencies
-uv venv
-uv pip install -e .
-uv pip install -e watchtowr-api-sdk
+# Install everything in one step (uv resolves the SDK from the submodule)
+uv sync
 
 # Run the server
 WATCHTOWR_API_KEY="your-api-key" \
@@ -38,12 +35,19 @@ WATCHTOWR_PLATFORM_HOST="https://your-tenant.your-region.watchtowr.io" \
 uv run watchtowr-mcp
 ```
 
+To pull the latest SDK later:
+
+```bash
+git submodule update --remote --merge
+uv sync
+```
+
 ### Docker
 
 Build the image:
 
 ```bash
-git clone https://github.com/watchtowr/watchtowr-mcp.git
+git clone --recurse-submodules https://github.com/watchtowr/watchtowr-mcp.git
 cd watchtowr-mcp
 docker build -t watchtowr-mcp .
 ```
@@ -121,7 +125,7 @@ docker run -d --rm \
 
 ## Available Tools
 
-### Findings (10 tools)
+### Findings (11 tools)
 
 | Tool | Description |
 |------|-------------|
@@ -130,13 +134,14 @@ docker run -d --rm \
 | `get_finding_details` | Get full finding detail — description, evidence, CVSS, CVE, EPSS |
 | `search_findings` | Search with filters: title, severity, status, asset, assignee, tags, date range |
 | `update_finding_status` | Change the status of a finding |
+| `update_finding_state` | Update the handling state of a finding (Uninvestigated, In Progress, Completed) |
 | `retest_finding` | Trigger a retest to verify remediation |
 | `get_finding_statuses` | List available finding status values |
 | `get_findings_summary_by_severity` | Count breakdown of findings by severity level |
 | `get_unresolved_findings_by_business_unit` | List unresolved findings for a specific business unit |
 | `export_finding_pdf` | Export a finding report as PDF |
 
-### Assets (24 tools)
+### Assets (38 tools)
 
 | Tool | Description |
 |------|-------------|
@@ -164,6 +169,20 @@ docker run -d --rm \
 | `get_asset_mobile_app_details` | Full detail for a specific mobile application |
 | `update_asset_status` | Update the status of any asset type |
 | `add_seed_asset` | Submit a new seed asset for discovery |
+| `manage_engine_settings` | Get or update scan engine settings for domains, subdomains, and IPs |
+| `set_asset_criticality` | Set criticality for any supported asset type |
+| `manage_asset_business_units` | Assign or unassign business units for any supported asset type |
+| `manage_asset_custom_property` | List, create, update, or delete custom properties on an asset |
+| `manage_asset_notes` | List, create, update, or delete notes on an asset |
+| `list_api_documentations` | List discovered API documentation assets |
+| `get_api_documentation_details` | Full detail for a specific API documentation asset |
+| `list_cloud_assets` | List discovered cloud assets (AWS, GCP, Azure, etc.) |
+| `get_cloud_asset_details` | Full detail for a specific cloud asset |
+| `list_package_managers` | List discovered package manager registry assets |
+| `get_package_manager_details` | Full detail for a specific package manager asset |
+| `get_asset_changelog` | Get change history for a specific asset |
+| `get_asset_dns_records` | Get DNS records associated with a specific asset by name |
+| `search_dns_records` | Search DNS records across discovered assets |
 
 ### Hunts (6 tools)
 
@@ -176,7 +195,7 @@ docker run -d --rm \
 | `search_hunts` | Search hunts by keyword, status, type, priority, date |
 | `get_hunt_impact_summary` | Combined summary: detail, severity breakdown, assets tested |
 
-### Threat Intelligence (6 tools)
+### Threat Intelligence (7 tools)
 
 | Tool | Description |
 |------|-------------|
@@ -186,13 +205,32 @@ docker run -d --rm \
 | `list_certificates` | List SSL/TLS certificates with subject, issuer, and expiry |
 | `get_certificate_details` | Full certificate detail including SANs and key info |
 | `get_expiring_certificates` | List certificates expiring within N days |
+| `search_pending_domains` | Search pending domains awaiting verification or discovery processing |
+
+### Intelligence (8 tools)
+
+| Tool | Description |
+|------|-------------|
+| `list_vulnerability_intelligence` | List vulnerability intelligence entries (CVEs) |
+| `get_vulnerability_intelligence_details` | Get full details for a CVE/vulnerability |
+| `list_adversary_intelligence` | List adversary/threat actor profiles |
+| `get_adversary_intelligence_details` | Get full details for a threat actor |
+<!-- 
+  | `list_compromised_endpoints` | List compromised endpoints from stealer logs |
+  | `get_compromised_endpoint_credentials` | List harvested credentials for an endpoint |
+  | `list_credential_attempt_logs` | List credential stuffing attempt logs |
+-->
+| `list_finding_retest_history` | List retest history across all findings |
+| `get_finding_retest_history_details` | Get retest history for a specific finding |
+| `search_active_defense_library` | Search active defense library rules by name, capability, or technique |
+| `search_capabilities` | Search watchTowr capabilities by keyword or category |
 
 ### Services (2 tools)
 
 | Tool | Description |
 |------|-------------|
 | `list_services` | List exposed services with technology stack and country |
-| `search_services_by_technology` | Search services by technology, port, or service type |
+| `list_technology_statistics` | List technology statistics for discovered services, ordered by count |
 
 ### Organisation (5 tools)
 
@@ -222,7 +260,7 @@ docker run -d --rm \
 | `get_asset_findings_count_by_type` | Unresolved findings heatmap by asset type |
 | `get_shadow_it_candidates` | New assets not assigned to any business unit |
 
-### Reporting & Compliance (11 tools)
+### Reporting & Compliance (12 tools)
 
 | Tool | Description |
 |------|-------------|
@@ -237,12 +275,13 @@ docker run -d --rm \
 | `get_executive_risk_scorecard` | Single-call executive dashboard: assets, findings, KEV, cert health |
 | `get_week_over_week_delta` | Weekly trend report: new assets and findings per week |
 | `get_top_findings_by_occurrence` | Most frequently recurring finding titles — systemic issues |
+| `get_security_posture` | Security posture dashboard summary with executive risk metrics |
 
 ### Incident Response (5 tools)
 
 | Tool | Description |
 |------|-------------|
-| `search_assets_by_country` | Find all IPs and services in a specific country |
+| `search_assets_by_country` | Find all services in a specific country |
 | `get_internet_facing_services_summary` | Exposed services grouped by type with counts |
 | `get_assets_by_technology` | Find all services running a specific technology |
 | `get_cisa_kev_remediation_status` | CISA-KEV findings grouped by remediation status |
@@ -306,6 +345,24 @@ watchtowr-mcp/
 ├── pyproject.toml
 ├── Dockerfile
 └── README.md
+```
+
+### Tests
+
+A two-layer test suite lives under `test/` — see `test/README.md` for details.
+
+- **Unit tests** (offline, no credentials): verify every SDK method the server imports actually exists, that `README.md` stays in sync with the `@mcp.tool()` registry, and that `sdk_compat` patches apply cleanly.
+- **Integration tests** (live tenant): one test per tool across all 104 tools. Auto-skipped when `WATCHTOWR_API_KEY` / `WATCHTOWR_PLATFORM_HOST` are absent. Mutating tools are gated behind a separate `--run-writes` flag.
+
+```bash
+# Offline checks
+uv run pytest test/unit
+
+# Full read-only sweep against a tenant
+WATCHTOWR_API_KEY=... WATCHTOWR_PLATFORM_HOST=... uv run pytest test/integration -m live
+
+# Include status flips, retests, seed asset submission
+WATCHTOWR_API_KEY=... WATCHTOWR_PLATFORM_HOST=... uv run pytest test/integration -m live --run-writes
 ```
 
 ## Support
